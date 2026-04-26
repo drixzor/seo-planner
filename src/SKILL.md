@@ -630,15 +630,14 @@ Increment on PLAN -> EXECUTE. Sprint 0 = AUDIT-only (pre-strategy). First real =
 These provide detailed guidance for specific SEO domains. Stored in `references/`.
 
 - `references/file-formats.md` — templates for all `{plan-dir}` files including audit templates
-- `references/technical-seo.md` — Core Web Vitals optimization, schema markup guide, crawl budget management, rendering (CSR vs SSR vs SSG), JavaScript SEO, international SEO (hreflang)
-- `references/content-strategy.md` — topical map methodology, content cluster design, search intent classification (informational/navigational/transactional/commercial investigation), content brief templates, programmatic SEO patterns
-- `references/link-building.md` — value-first outreach, digital PR, HARO/journalist resources, broken link building, resource page link building, content formats that attract links, outreach email templates
-- `references/keyword-research.md` — keyword difficulty assessment, search volume analysis, keyword grouping methodology, long-tail strategy, SERP feature targeting, People Also Ask mining
-- `references/analytics-setup.md` — Google Search Console configuration, Google Analytics 4 setup, rank tracking tool setup, reporting dashboards, KPI definitions
-- `references/complexity-control.md` — anti-complexity protocol, forbidden SEO patterns, over-optimization detection
-- `references/decision-anchoring.md` — when/how to anchor SEO decisions in code comments and documentation
-- `references/planning-rigor.md` — assumption tracking, pre-mortem for SEO strategies, exploration confidence criteria
-- `references/convergence-metrics.md` — ranking trajectory analysis, traffic growth rate tracking, sprint health signals
+- `references/technical-seo.md` — Core Web Vitals, schema markup, crawl budget, rendering, JavaScript SEO, international SEO
+- `references/content-strategy.md` — topical maps, content clusters, search intent, content briefs, programmatic SEO
+- `references/backlink-strategy.md` — digital PR, link building frameworks, anchor text, link audits, foundational links
+- `references/on-page-seo.md` — 45-point on-page optimization checklist (title, meta, headings, images, schema, UX, CTA)
+- `references/scoring-framework.md` — SCORE evaluation rubric (1-5 per dimension), sprint readiness, 90-day milestones
+- `references/geo-optimization.md` — Generative Engine Optimization: AI Overviews, Perplexity, ChatGPT citations, entity optimization, AI crawler management
+- `references/local-seo.md` — Google Business Profile, local citations, local schema, map pack, multi-location SEO, reputation management
+- `references/ecommerce-seo.md` — product schema, category pages, faceted navigation, product feeds, e-commerce content strategy
 
 ## Quick Reference: 90-Day Sprint Template
 

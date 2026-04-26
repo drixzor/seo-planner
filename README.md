@@ -162,13 +162,19 @@ Without sub-agents installed, the main agent handles everything. With them, audi
 src/
 +-- SKILL.md                        # Core protocol — the state machine and all rules
 +-- agents/                         # 7 sub-agent definitions
-+-- scripts/bootstrap.mjs           # Sprint directory management
++-- scripts/
+|   +-- bootstrap.mjs               # Sprint directory management
+|   +-- bootstrap.test.mjs          # Test suite
+|   +-- validate-plan.mjs           # Protocol compliance validator
 +-- references/
-    +-- technical-seo.md            # Technical audit checklist
+    +-- technical-seo.md            # Technical audit checklist (CWV, crawl, schema, mobile)
     +-- content-strategy.md         # Topical maps, pillar-cluster architecture, pSEO
-    +-- backlink-strategy.md        # Link building frameworks
-    +-- on-page-seo.md              # 45-point on-page checklist
-    +-- scoring-framework.md        # SCORE evaluation rubric
+    +-- backlink-strategy.md        # Link building frameworks, digital PR, anchor text
+    +-- on-page-seo.md              # 45-point on-page optimization checklist
+    +-- scoring-framework.md        # SCORE evaluation rubric and sprint milestones
+    +-- geo-optimization.md         # Generative Engine Optimization (AI citations)
+    +-- local-seo.md                # Local SEO (GBP, citations, map pack)
+    +-- ecommerce-seo.md            # E-commerce SEO (product schema, faceted nav)
     +-- file-formats.md             # Templates for all plan directory files
 ```
 
