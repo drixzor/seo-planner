@@ -94,6 +94,21 @@ These files are active working memory. Re-read during the conversation, not just
 
 **>50 messages**: re-read `state.md` + `plan.md` before every response. Files are truth, not memory.
 
+### Auto-Persistence (CRITICAL)
+
+The system saves its own state automatically at every transition. Never wait for the user to ask.
+
+| When | What to save | Why |
+|------|-------------|-----|
+| Every state transition | `state.md` (new phase, timestamp, reason), `progress.md` (status update) | State survives context loss |
+| AUDIT→PLAN | `findings.md` (SCORE baseline, audit links, constraints) | Baseline is permanent record |
+| PLAN→EXECUTE | `progress.md` (all steps as Remaining), `decisions.md` (approach + trade-offs) | Execution plan is on disk |
+| After each EXECUTE step | `progress.md` (Remaining→Completed), `state.md` (change manifest) | Every change tracked |
+| EXECUTE→MEASURE | Full change manifest in `state.md`, final `progress.md` | Clean handoff to measurement |
+| CLOSE | `summary.md`, `LESSONS.md` (rolling append), run `bootstrap.mjs close` | Lessons carry to next sprint |
+
+**Across conversations**: All state lives in `plans/`. When a new conversation starts, check `plans/.current_plan` — if it exists, read `state.md` and resume. The filesystem is permanent. The context window is temporary.
+
 ## Bootstrapping
 
 ```bash

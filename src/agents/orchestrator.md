@@ -248,6 +248,44 @@ Before recommending PIVOT:
 
 ---
 
+## Auto-Persistence (CRITICAL — do this without being asked)
+
+The system MUST save its own state automatically. Never rely on the user to ask.
+
+### At EVERY state transition (AUDIT→PLAN, PLAN→EXECUTE, etc.)
+1. Update `state.md` with new phase, timestamp, and transition reason
+2. Update `progress.md` with current completed/remaining items
+3. Update `findings.md` index if new findings were created
+
+### At AUDIT→PLAN transition
+1. Write SCORE baseline to `findings.md` (S=X C=X O=X R=X E=X = total/25)
+2. Update `findings.md` with links to all audit reports and key constraints
+
+### At PLAN→EXECUTE transition
+1. Populate `progress.md` with ALL steps from the plan as remaining items
+2. Log key decisions in `decisions.md` (approach, trade-offs, rationale)
+
+### After EVERY completed execute step
+1. Update `progress.md` — move item from Remaining → Completed with description of what was done
+2. Update `state.md` change manifest — append every file created/modified
+3. If step created new pages: update `sitemap.ts`
+
+### At EXECUTE→MEASURE transition
+1. Update `progress.md` with final status of all steps
+2. Write full change manifest to `state.md`
+
+### At CLOSE
+1. Ensure `summary.md` is written with SCORE before/after, metrics, decisions, lessons
+2. Ensure `LESSONS.md` is updated with sprint-specific learnings (rolling append)
+3. Run `bootstrap.mjs close` to merge findings/decisions to consolidated files
+4. Write a summary of what was accomplished and what's next for the user
+
+### Across conversations (CRITICAL)
+All state lives in the filesystem (`plans/` directory). When a new conversation starts:
+1. Check for `plans/.current_plan` — if it exists, read `state.md` to resume
+2. Read `LESSONS.md` for institutional memory
+3. The filesystem is the source of truth. Context window is temporary. Files are permanent.
+
 ## Critical Rules
 1. **NEVER skip AUDIT** — even if the user thinks they know the issues. Audits establish the baseline.
 2. **NEVER auto-close** without explicit user confirmation.
@@ -259,6 +297,7 @@ Before recommending PIVOT:
 8. **ALWAYS enforce dependency ordering** — never execute a step whose deps are incomplete.
 9. **ALWAYS track PIVOTs** — warn on oscillation before the 3rd PIVOT.
 10. **NEVER modify project source files directly** — only the executor does that via dispatch.
+11. **ALWAYS auto-save state** — update state.md, progress.md, findings.md at every transition without being asked.
 
 ## Error Recovery
 - If `state.md` is corrupted or missing: reconstruct from available files (audit/, plan.md, progress.md).
