@@ -389,3 +389,191 @@ Create and fully complete profiles with links to your site:
 | Growing (DR 20-40) | 15-30 | Digital PR + statistics pages + broken link building |
 | Established (DR 40-60) | 20-50 | Data-driven content + free tools + partnerships |
 | Authority (DR 60+) | Passive growth + strategic | Maintain + high-value partnerships only |
+
+---
+
+## 11. Outreach Email Templates
+
+Tested templates for the most common link building outreach scenarios. Personalize every email — templated outreach that reads like a template gets ignored.
+
+### Template 1: Resource Page Outreach
+
+```
+Subject: Resource suggestion for your [topic] page
+
+Hi [First Name],
+
+I was going through your [page title] page
+(link: [their page URL]) and noticed you list
+some great resources about [topic].
+
+We recently published [content title] that covers
+[specific angle or value — e.g., "a step-by-step framework
+for auditing technical SEO with free tools"].
+
+It might be a useful addition for your readers,
+especially the section on [specific section].
+
+Either way, keep up the excellent work on the site.
+
+Best,
+[Your Name]
+[Your Title, Company]
+```
+
+### Template 2: Broken Link Outreach
+
+```
+Subject: Quick heads-up — broken link on your [page title]
+
+Hi [First Name],
+
+I was reading your [page title] (link: [their page URL])
+and noticed the link to [dead URL / anchor text of broken link]
+appears to be broken — it returns a 404.
+
+We have a similar resource at [your URL] that covers [topic].
+It might work as a replacement, but I wanted to let you know
+about the broken link regardless.
+
+Cheers,
+[Your Name]
+[Your Title, Company]
+```
+
+### Template 3: Digital PR / Original Research Pitch
+
+```
+Subject: Original data: [headline finding]
+
+Hi [First Name],
+
+We just published original research based on [data source —
+e.g., "analysis of 10,000 SaaS landing pages"]
+and found some results your audience might find interesting:
+
+Key stat: [specific number — e.g., "pages with video
+convert 34% better than those without"].
+
+The full report is here: [URL]
+
+Would this be useful for an upcoming piece?
+Happy to provide exclusive quotes or additional data cuts.
+
+Best,
+[Your Name]
+[Your Title, Company]
+```
+
+### Template 4: Guest Post Pitch
+
+```
+Subject: Guest article idea for [Publication Name]
+
+Hi [First Name],
+
+I have been reading [Publication Name] for a while and
+particularly enjoyed your recent piece on [specific article title].
+
+I would like to contribute an article about [specific topic/angle].
+Here is a brief outline:
+
+- [Point 1]
+- [Point 2]
+- [Point 3]
+
+I have written about this topic for [other publications / credentials],
+so I can deliver a polished draft that fits your editorial style.
+
+Would this work for your content calendar?
+
+Best,
+[Your Name]
+[Your Title, Company]
+[Link to a relevant writing sample]
+```
+
+### Follow-Up Template (send 5-7 days after no response)
+
+```
+Subject: RE: [original subject line]
+
+Hi [First Name],
+
+Just following up on my email about [topic / the broken link /
+the resource suggestion]. I know inboxes get busy.
+
+Happy to provide more details or adjust the angle if helpful.
+
+Best,
+[Your Name]
+```
+
+**Outreach tips:**
+- Send follow-ups only once. Two follow-ups maximum across the entire thread.
+- Send between Tuesday and Thursday, 9-11 AM in the recipient's timezone.
+- Keep every email under 150 words. Journalists and editors skim.
+- Never attach files in first contact. Link to the resource instead.
+- Track opens and replies in a spreadsheet or CRM (Pitchbox, BuzzStream, or a Google Sheet).
+
+---
+
+## 12. Link Prospecting Workflow
+
+A systematic process for finding and qualifying link building targets at scale.
+
+### Step 1: Competitor Backlink Analysis
+- Export backlinks for your top 3-5 competitors from Ahrefs (Site Explorer > Backlinks)
+- Filter: DR > 30, dofollow only, one link per domain
+- Merge all competitor exports into a single spreadsheet, deduplicate by domain
+- Result: a master list of domains that link to competitors in your space
+
+### Step 2: Identify Link Types
+Categorize each prospect by how the link was acquired:
+- **Resource page**: curated list of links on a topic page
+- **Guest post**: article written by the competitor on the linking site
+- **Editorial mention**: natural mention in a news article or blog post
+- **Directory**: industry or niche directory listing
+- **Link roundup**: weekly/monthly curated link posts
+- **Broken link replacement**: competitor's link replaced a dead link
+- Each type requires a different outreach approach (see templates above)
+
+### Step 3: Score Prospects
+For each prospect, calculate a priority score:
+```
+Priority = (Domain Rating x Relevance Score) / Estimated Effort
+```
+- **Domain Rating**: from Ahrefs (0-100)
+- **Relevance Score**: 1 (tangential), 2 (same industry), 3 (exact topic match)
+- **Estimated Effort**: 1 (resource page submission), 2 (broken link outreach), 3 (guest post), 4 (digital PR pitch)
+- Higher score = pursue first
+
+### Step 4: Build Outreach List
+- Select top 50-100 prospects per outreach sprint (2-week cycle)
+- Find contact information: author byline, about page, LinkedIn, Hunter.io, Snov.io
+- Record in spreadsheet: Domain, Contact Name, Email, Link Type, Page URL, Priority Score, Notes
+- Group by link type to batch similar outreach
+
+### Step 5: Personalize and Send
+- Write 10-15 personalized emails per day (more than that and quality drops)
+- Reference something specific about their site or recent content
+- Track in spreadsheet: Date Sent, Follow-Up Date, Response, Outcome
+- Send follow-up after 5-7 days if no response (one follow-up only)
+
+### Expected Response Rates
+| Outreach Type | Response Rate | Link Conversion |
+|--------------|---------------|-----------------|
+| Cold resource page outreach | 3-5% | 1-3% |
+| Broken link outreach | 10-15% | 5-8% |
+| Guest post pitch (targeted) | 5-10% | 3-7% |
+| Digital PR pitch (newsworthy data) | 10-20% | 5-10% |
+| Existing relationship / warm outreach | 20-30% | 15-25% |
+
+### Link Prospecting Audit Table
+
+Track outreach progress per sprint:
+
+| Domain | DR | Relevance | Link Type | Contact | Date Sent | Follow-Up | Response | Link Acquired | URL |
+|--------|-----|-----------|-----------|---------|-----------|-----------|----------|---------------|-----|
+| [site.com] | 55 | 3 | Resource | [name] | 2026-05-01 | 2026-05-07 | Yes | Yes | [URL] |
+| [site.com] | 42 | 2 | Guest | [name] | 2026-05-01 | 2026-05-07 | No | - | - |

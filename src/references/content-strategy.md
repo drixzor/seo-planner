@@ -373,3 +373,148 @@ Why they work:
 - Recurring traffic (users bookmark and return)
 - Lead generation (gate advanced features behind email)
 - Topical authority signal (Google sees you as a resource hub)
+
+---
+
+## 10. Keyword Research Workflow
+
+A repeatable, six-step process for finding and prioritizing keywords.
+
+### Step 1: Brain Dump Seed Keywords
+- List every product term, feature name, and service category
+- Write down the top 20 questions your customers ask (sales calls, support tickets, chat logs)
+- Mine competitor homepages, navigation, and blog categories for topic ideas
+- Review your own site search logs for what visitors look for but cannot find
+- Add industry jargon AND the plain-language equivalents customers actually type
+
+### Step 2: Expand with Tools
+- **Ahrefs Keywords Explorer**: Enter seeds, export "Also rank for" + "Questions" tabs
+- **Google Keyword Planner**: Enter seeds, grab the full list including low-volume long-tails
+- **AlsoAsked**: Enter seeds, map the question tree (great for FAQ and PAA targeting)
+- **AnswerThePublic**: Enter seeds, capture the who/what/why/how wheel
+- **Google autocomplete + PAA**: Manually type seeds and record every suggestion
+- Export everything into a single spreadsheet for the next step
+
+### Step 3: Filter by Search Intent
+Classify every keyword row:
+- **Informational** ("what is", "how to", "why does") -> blog post, guide, tutorial
+- **Commercial investigation** ("best", "vs", "review", "top 10") -> comparison page, roundup
+- **Transactional** ("buy", "pricing", "discount", "free trial") -> product page, landing page
+- **Navigational** (brand name, product name) -> usually ignore unless it is your brand
+- Delete keywords with zero intent match for your business
+
+### Step 4: Score by Opportunity
+Calculate an opportunity score for each keyword:
+```
+Opportunity = (Monthly Volume x Estimated CTR) / (Keyword Difficulty + 1)
+```
+- Estimated CTR: position 1 ~ 30%, position 2 ~ 15%, position 3 ~ 10% (adjust for SERP features)
+- KD + 1 avoids division by zero for KD=0 terms
+- Higher score = better opportunity per unit of ranking effort
+
+### Step 5: Group into Clusters by Parent Topic
+- Sort keywords by parent topic (Ahrefs shows this automatically)
+- Group all keywords that would be answered by a single page into one cluster
+- Each cluster = one target page
+- Typical cluster: 1 primary keyword + 3-10 secondary/long-tail keywords
+- If two keywords require fundamentally different content, they are separate clusters
+
+### Step 6: Prioritize
+Work through clusters in this order:
+1. **Quick wins**: KD < your site's DR, and you already have a page ranking 5-20 (optimize existing page)
+2. **High volume + achievable KD**: new content with the best opportunity scores
+3. **Strategic keywords**: high business value even if volume is low (bottom-of-funnel, money terms)
+4. **Long-tail depth**: fill out cluster coverage for topical authority
+5. **Aspirational**: high KD, high volume terms you build toward over 6-12 months
+
+---
+
+## 11. Content Brief Template (Quick Reference)
+
+Use this abbreviated template for rapid brief creation. The full template is in Section 6.
+
+```
+Target Keyword: [keyword]
+Search Volume: [monthly]
+Keyword Difficulty: [0-100]
+Search Intent: [informational/commercial/transactional]
+Target URL: [/path]
+Word Count Target: [range based on SERP analysis]
+H1: [proposed, includes primary keyword]
+Outline:
+  H2: [section 1 — addresses main query]
+  H2: [section 2 — covers key subtopic]
+  H2: [section 3 — provides depth/examples]
+  H2: [section 4 — FAQ or related questions]
+Internal Links TO (link from this page to):
+  - [URL] with anchor "[text]"
+  - [URL] with anchor "[text]"
+Internal Links FROM (pages that should link to this page):
+  - [URL] — update this old article to reference the new page
+  - [URL] — add contextual link from this high-traffic page
+Competing Pages (top 3 SERP results):
+  1. [URL] - [word count] - [what they cover well]
+  2. [URL] - [word count] - [what they cover well]
+  3. [URL] - [word count] - [what they cover well]
+Content Differentiator: [what makes ours better — original data, unique angle, better visuals, more depth]
+CTA: [what action should the reader take after reading]
+Schema Type: [Article/FAQ/HowTo/none]
+```
+
+### Filling the Brief Efficiently
+- Word count target: average of top 5 SERP results, +10-20%
+- Outline: mirror the H2 structure of the top 3 results, then add 1-2 sections they miss
+- Competing pages: use Ahrefs "SERP overview" or manually Google the keyword
+- Internal links FROM: search your site with `site:example.com [keyword]` to find candidates
+- Content differentiator: this is the most important field — if you cannot answer it, reconsider the keyword
+
+---
+
+## 12. Cannibalization Detection and Fix
+
+Keyword cannibalization occurs when two or more pages on your site compete for the same keyword, splitting authority and confusing Google about which page to rank.
+
+### How to Detect Cannibalization
+1. **Google Search Console**: Go to Performance > Pages, filter by a target keyword. If 2+ pages appear with impressions, you have cannibalization.
+2. **Site search**: Google `site:example.com "target keyword"` — if multiple pages appear, investigate.
+3. **Rank tracking**: If a keyword's ranking URL keeps switching between two pages week to week, that is cannibalization.
+4. **Ahrefs**: Site Explorer > Organic Keywords > filter for your keyword > check "Traffic" column for multiple URLs.
+
+### How to Assess Which Page Wins
+For each pair of cannibalizing pages, compare:
+- Which page has more backlinks pointing to it?
+- Which page gets more organic traffic overall?
+- Which page better matches the search intent for that keyword?
+- Which page is more comprehensive and higher quality?
+- Which page is more important to your business goals?
+
+The page that wins on 3+ of these criteria is the one to keep as the primary.
+
+### Fix Options
+
+**Option A: Merge pages (most common fix)**
+- Combine the best content from both pages into the stronger page
+- 301 redirect the weaker page's URL to the stronger page
+- Update all internal links to point to the surviving page
+- Best for: two pages covering the same topic with similar intent
+
+**Option B: Differentiate intent**
+- Rewrite one page to target a different intent or keyword variation
+- Example: keep page A as "What is CRM" (informational) and rewrite page B as "Best CRM Software" (commercial)
+- Update titles, H1s, and content to make the distinction clear
+- Best for: pages that could reasonably serve different intents
+
+**Option C: Canonical the weaker to the stronger**
+- Add `<link rel="canonical" href="[stronger page URL]">` to the weaker page
+- Use this only if you need to keep both pages live (e.g., different user journeys)
+- This is a soft signal — Google may ignore it
+- Best for: temporary fix or when pages must both exist for UX reasons
+
+### Cannibalization Audit Table
+
+Use this template to track and resolve cannibalization issues:
+
+| Keyword | Page A URL | Page A Pos. | Page A Traffic | Page B URL | Page B Pos. | Page B Traffic | Winner | Action | Status |
+|---------|-----------|-------------|----------------|-----------|-------------|----------------|--------|--------|--------|
+| [kw] | /page-a/ | 8 | 120/mo | /page-b/ | 12 | 45/mo | A | Merge B into A, 301 redirect | Planned |
+| [kw] | /page-c/ | 5 | 300/mo | /page-d/ | 7 | 250/mo | C | Differentiate D to new KW | In progress |

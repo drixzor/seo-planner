@@ -363,3 +363,80 @@ Bad:   /Running_Shoes/Mens_Trail_Running_Shoes
 | Schema Markup Validator | Structured data validation | Free |
 | Chrome DevTools | Performance, rendering | Free |
 | WebPageTest | Detailed speed analysis | Free |
+
+---
+
+## 11. Core Web Vitals Fix Recipes
+
+Specific, actionable fixes for each Core Web Vital metric when it falls outside the "good" threshold.
+
+### LCP > 2.5s (Largest Contentful Paint)
+
+The LCP element is usually the hero image, a large text block, or a background image. Identify it first using Chrome DevTools > Performance > LCP marker.
+
+1. **Preload the hero image**: Add `<link rel="preload" as="image" href="/hero.webp">` in the `<head>`. This tells the browser to fetch it immediately rather than waiting for CSS/JS to discover it.
+2. **Use WebP or AVIF format**: Convert hero and above-the-fold images to WebP (30% smaller than JPEG) or AVIF (50% smaller). Use `<picture>` for fallback.
+3. **Set explicit width and height**: Add `width` and `height` attributes to the LCP image to prevent layout reflow while loading.
+4. **Defer non-critical JavaScript**: Move non-essential scripts to `defer` or `async`. Scripts in `<head>` without these attributes block rendering. Third-party scripts (analytics, chat widgets, ad tags) are the most common offenders.
+5. **Use a CDN for static assets**: Serve images, CSS, and JS from edge servers geographically close to users. Cloudflare, AWS CloudFront, or Fastly are common choices.
+6. **Inline critical CSS**: Extract the CSS required for above-the-fold content and inline it in `<style>` tags. Load the remaining CSS asynchronously.
+7. **Optimize server response time**: Target TTFB < 600ms. Use caching, upgrade hosting, or add a reverse proxy (Varnish, nginx).
+
+### CLS > 0.1 (Cumulative Layout Shift)
+
+CLS measures unexpected visual movement. Every element that shifts after initial paint contributes to the score.
+
+1. **Set explicit dimensions on all images and videos**: Always include `width` and `height` attributes or use CSS `aspect-ratio`. This reserves space before the media loads.
+2. **Preload web fonts with font-display: swap**: Add `<link rel="preload" as="font" href="/font.woff2" crossorigin>` and set `font-display: swap` in your `@font-face` rules. This prevents the invisible-to-visible text flash that causes layout shift.
+3. **Avoid dynamically injected content above the fold**: Banners, cookie notices, and promotional bars that push content down after load are major CLS offenders. Reserve space for them in the initial HTML or use CSS `transform` animations instead of layout-changing properties.
+4. **Reserve space for ads and embeds**: Use `min-height` on ad containers to prevent content from jumping when the ad loads. For third-party embeds (YouTube, Twitter, maps), wrap in a container with `aspect-ratio` or fixed dimensions.
+5. **Avoid inserting DOM elements above existing content**: If you must insert elements dynamically, add them below the current viewport or use CSS `contain: layout` on the container.
+
+### INP > 200ms (Interaction to Next Paint)
+
+INP replaced FID as of March 2024. It measures the delay between a user interaction (click, tap, keypress) and the next visual update.
+
+1. **Break long tasks (>50ms) into smaller chunks**: Use `requestAnimationFrame` or `setTimeout(fn, 0)` to yield to the main thread between processing steps. Long tasks block all user interactions.
+2. **Use requestIdleCallback for non-urgent work**: Analytics events, pre-fetching, and background calculations should run when the browser is idle, not during user interactions.
+3. **Debounce input handlers**: For search-as-you-type, scroll handlers, and resize listeners, debounce with 100-200ms delay to prevent stacking function calls.
+4. **Reduce main thread JavaScript**: Audit with Chrome DevTools > Performance > Main thread. Identify the heaviest scripts and consider code splitting, lazy loading, or removing them.
+5. **Move heavy computation to Web Workers**: Image processing, data transformations, and complex calculations can run off the main thread in a Web Worker.
+6. **Minimize third-party script impact**: Tag managers, analytics, A/B testing tools, and chat widgets often run expensive code on every interaction. Audit with "Third-party summary" in DevTools.
+
+**Note:** FID has been replaced by INP (Interaction to Next Paint) as of March 2024. All references to FID should be treated as INP. The key difference is that FID only measured the first interaction, while INP measures the worst interaction throughout the entire page lifecycle.
+
+---
+
+## 12. JavaScript SEO Checklist
+
+For sites using JavaScript frameworks (React, Vue, Angular, Next.js, Nuxt, SvelteKit, etc.), JavaScript rendering issues are the most common cause of indexation failures.
+
+### Pre-Launch Checks
+
+1. **Does the page render meaningful content without JavaScript?**
+   - Test: `curl -s https://example.com/page | grep -i "<h1>"` — if the H1 is missing from the raw HTML, Googlebot may not see it
+   - Test: Disable JavaScript in Chrome DevTools (Settings > Debugger > Disable JavaScript) and reload the page
+   - If critical content is missing, you need SSR, SSG, or dynamic rendering
+
+2. **Are key content elements in the initial HTML?**
+   - H1 tag with the target keyword
+   - Article body text / product description / main content
+   - Internal navigation links (as `<a href>` tags, not JS click handlers)
+   - Meta title and description tags
+   - Canonical link tag
+   - If any of these are injected by JavaScript after initial load, they may be missed or delayed for indexing
+
+3. **Does Google render the page correctly?**
+   - Go to Google Search Console > URL Inspection > enter the page URL
+   - Click "Test Live URL" > view the rendered screenshot
+   - Compare the screenshot to what a real user sees — are they identical?
+   - Check the rendered HTML tab for the presence of key content elements
+
+### Fixes for Common JavaScript SEO Problems
+
+- **Content requires JS to render**: Implement Server-Side Rendering (SSR) or Static Site Generation (SSG). Next.js and Nuxt.js make this straightforward. For SPAs, use dynamic rendering (Rendertron, Prerender.io) as a stopgap.
+- **Internal links use JavaScript navigation**: Replace `<div onClick={navigate}>` with `<a href="/path">`. Googlebot follows `<a>` tags reliably but cannot execute arbitrary click handlers.
+- **JSON-LD schema injected by JavaScript**: Move structured data to a `<script type="application/ld+json">` block in the initial HTML response, not inside a React component that renders client-side.
+- **Meta tags set by JavaScript**: Use SSR or a `<head>` management library (react-helmet, vue-meta, next/head) that injects tags during server render, not client-side hydration.
+- **Lazy-loaded content never triggers for Googlebot**: Googlebot has limited scroll emulation. Use Intersection Observer for lazy loading (Googlebot supports it) rather than scroll position checks. For critical content, do not lazy load at all.
+- **Hash-based routing (#/page)**: Googlebot does not execute hash-based navigation. Use History API pushState routing (/page) instead.

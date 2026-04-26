@@ -638,6 +638,7 @@ These provide detailed guidance for specific SEO domains. Stored in `references/
 - `references/geo-optimization.md` — Generative Engine Optimization: AI Overviews, Perplexity, ChatGPT citations, entity optimization, AI crawler management
 - `references/local-seo.md` — Google Business Profile, local citations, local schema, map pack, multi-location SEO, reputation management
 - `references/ecommerce-seo.md` — product schema, category pages, faceted navigation, product feeds, e-commerce content strategy
+- `references/measurement-framework.md` — 5-Why root cause analysis, failure classification (WRONG_TARGET/POOR_EXECUTION/EXTERNAL_FACTOR/INSUFFICIENT_TIME), convergence scoring, momentum tracking, measurement timing rules
 
 ## Quick Reference: 90-Day Sprint Template
 

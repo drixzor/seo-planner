@@ -183,6 +183,21 @@ function snapshotLessons(planDirName) {
   try { if (existsSync(lessonsPath)) copyFileSync(lessonsPath, snapshotPath); } catch {}
 }
 
+function trimLessons() {
+  const lessonsPath = join(plansDir, "LESSONS.md");
+  let content;
+  try { content = readFileSync(lessonsPath, "utf-8"); } catch { return; }
+  const lines = content.split("\n");
+  if (lines.length <= 200) return;
+  // Keep the newest 200 lines (trim from the bottom = oldest entries removed).
+  // Since LESSONS.md is newest-first, the bottom is the oldest.
+  const trimmed = lines.slice(0, 200);
+  // Ensure it ends with a newline
+  const result = trimmed.join("\n") + (trimmed[trimmed.length - 1] === "" ? "" : "\n");
+  writeFileSync(lessonsPath + ".tmp", result);
+  renameSync(lessonsPath + ".tmp", lessonsPath);
+}
+
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
@@ -278,7 +293,7 @@ ${goal}
 | Core Web Vitals | | | | |
 
 ## Steps
-*Ordered execution plan. Annotate each with [RISK: low/medium/high] and [deps: N,M].*
+*Ordered execution plan. Annotate each with [RISK: low/medium/high] and [deps: N,M] for dependencies. Executor will enforce these.*
 
 ## Assumptions
 *What you assume, which finding grounds it, which steps depend on it.*
@@ -529,6 +544,14 @@ function cmdClose(opts = {}) {
 
   try { appendToIndex(planDirName); } catch {}
   try { snapshotLessons(planDirName); } catch {}
+  try { trimLessons(); } catch {}
+
+  // Check for summary.md before removing pointer
+  const summaryPath = join(plansDir, planDirName, "summary.md");
+  if (!existsSync(summaryPath) && !opts.silent) {
+    console.log(`WARNING: summary.md not found. The CLOSE protocol requires writing summary.md before running bootstrap close.`);
+  }
+
   try { unlinkSync(pointerFile); } catch {}
 
   if (!opts.silent) {
@@ -583,8 +606,19 @@ const args = process.argv.slice(2);
 const subcommands = new Set(["new", "resume", "status", "close", "list", "help"]);
 if (args.length === 0) { printUsage(); process.exit(0); }
 const cmd = args[0];
+function looksLikeGoal(text) {
+  // A goal should contain a space or be longer than 10 chars.
+  // Single words that match subcommands or flags are not goals.
+  if (subcommands.has(text)) return false;
+  if (text.startsWith("-")) return false;
+  return text.includes(" ") || text.length > 10;
+}
 if (!subcommands.has(cmd)) {
   if (cmd.startsWith("-")) { console.error(`ERROR: Unknown flag "${cmd}".`); process.exit(1); }
+  if (!looksLikeGoal(args.join(" "))) {
+    console.error(`ERROR: Unknown command "${cmd}". Run with no arguments for usage.`);
+    process.exit(1);
+  }
   cmdNew(args.join(" ") || "No goal specified", false);
 } else if (cmd === "new") {
   const force = args.includes("--force");

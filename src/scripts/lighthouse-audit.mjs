@@ -19,8 +19,9 @@
 
 import { execFile } from "node:child_process";
 import { readFile, unlink } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 
 // ---------------------------------------------------------------------------
@@ -35,24 +36,41 @@ function flag(name) {
   return args[idx + 1];
 }
 
-const url = args.find((a) => !a.startsWith("--"));
+const input = args.find((a) => !a.startsWith("--"));
 const outputFormat = flag("--output") || "md";
 const categoriesRaw =
   flag("--categories") || "performance,seo,accessibility,best-practices";
 const categories = categoriesRaw.split(",").map((c) => c.trim());
 
-if (!url) {
+if (!input) {
   console.error(
-    "Usage: node lighthouse-audit.mjs <url> [--output json|md] [--categories ...]"
+    "Usage: node lighthouse-audit.mjs <url-or-file> [--output json|md] [--categories ...]"
+  );
+  console.error(
+    "  e.g. node lighthouse-audit.mjs https://example.com"
+  );
+  console.error(
+    "  e.g. node lighthouse-audit.mjs ./index.html   (static analysis fallback)"
   );
   process.exit(1);
 }
 
+// Determine if input is a URL or a local file path
+let url = null;
+let localFilePath = null;
+
 try {
-  new URL(url);
+  new URL(input);
+  url = input;
 } catch {
-  console.error(`Invalid URL: ${url}`);
-  process.exit(1);
+  // Not a valid URL — check if it's a local file
+  const resolved = resolve(input);
+  if (existsSync(resolved)) {
+    localFilePath = resolved;
+  } else {
+    console.error(`Invalid URL and file not found: ${input}`);
+    process.exit(1);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -340,19 +358,272 @@ function buildMarkdown(report) {
 }
 
 // ---------------------------------------------------------------------------
+// Static Analysis Fallback (when Lighthouse/Chrome is not available)
+// ---------------------------------------------------------------------------
+
+/**
+ * Performs a basic static analysis of a local HTML file, checking for common
+ * SEO and performance issues without requiring Lighthouse or Chrome.
+ */
+async function runStaticAnalysis(filePath) {
+  const html = await readFile(filePath, "utf-8");
+  const lines = [];
+  const issues = [];
+  const passes = [];
+
+  lines.push(`# Limited Audit (no Lighthouse)`);
+  lines.push(``);
+  lines.push(`**File:** ${filePath}`);
+  lines.push(
+    `**Date:** ${new Date().toISOString().replace("T", " ").slice(0, 19)}`
+  );
+  lines.push(`**Mode:** Static HTML analysis (Lighthouse not available)`);
+  lines.push(``);
+  lines.push(`> For full Lighthouse audit, install: npm install -g lighthouse`);
+  lines.push(``);
+
+  // --- Total HTML size ---
+  const htmlSizeKB = (Buffer.byteLength(html, "utf-8") / 1024).toFixed(1);
+  lines.push(`## Page Size`);
+  lines.push(``);
+  lines.push(`**Total HTML size:** ${htmlSizeKB} KB`);
+  if (parseFloat(htmlSizeKB) > 100) {
+    issues.push(`HTML document is ${htmlSizeKB} KB (target < 100 KB for initial HTML)`);
+  }
+  lines.push(``);
+
+  // --- Render-blocking resources ---
+  lines.push(`## Render-Blocking Resources`);
+  lines.push(``);
+
+  // Script tags in <head> without defer or async
+  const headMatch = html.match(/<head[\s>][\s\S]*?<\/head>/i);
+  const headContent = headMatch ? headMatch[0] : "";
+  const scriptTagsInHead =
+    headContent.match(/<script\b[^>]*src\s*=\s*["'][^"']+["'][^>]*>/gi) || [];
+  const blockingScripts = scriptTagsInHead.filter(
+    (tag) => !/\b(defer|async)\b/i.test(tag)
+  );
+
+  if (blockingScripts.length > 0) {
+    issues.push(
+      `${blockingScripts.length} render-blocking script(s) in <head> (missing defer/async)`
+    );
+    lines.push(
+      `**${blockingScripts.length} render-blocking script(s) found in \`<head>\`:**`
+    );
+    lines.push(``);
+    for (const tag of blockingScripts) {
+      const src = tag.match(/src\s*=\s*["']([^"']+)["']/i);
+      lines.push(`- \`${src ? src[1] : tag}\``);
+    }
+    lines.push(``);
+    lines.push(
+      `**Fix:** Add \`defer\` or \`async\` attribute to these script tags, or move them to the end of \`<body>\`.`
+    );
+  } else {
+    passes.push(`No render-blocking scripts in <head>`);
+    lines.push(`No render-blocking scripts found in \`<head>\`. Good.`);
+  }
+  lines.push(``);
+
+  // --- Unoptimized images ---
+  lines.push(`## Image Optimization`);
+  lines.push(``);
+
+  const imgTags = html.match(/<img\b[^>]*>/gi) || [];
+  const imgsWithoutDimensions = imgTags.filter(
+    (tag) => !/\bwidth\s*=/i.test(tag) || !/\bheight\s*=/i.test(tag)
+  );
+  const imgsWithoutLazy = imgTags.filter(
+    (tag) => !/loading\s*=\s*["']lazy["']/i.test(tag)
+  );
+  const imgSrcs = imgTags
+    .map((tag) => {
+      const m = tag.match(/src\s*=\s*["']([^"']+)["']/i);
+      return m ? m[1] : null;
+    })
+    .filter(Boolean);
+  const nonOptimalFormats = imgSrcs.filter(
+    (src) => !/\.(webp|avif|svg)(\?|$)/i.test(src)
+  );
+
+  if (imgTags.length === 0) {
+    lines.push(`No \`<img>\` tags found.`);
+  } else {
+    lines.push(`**Total images:** ${imgTags.length}`);
+    lines.push(``);
+
+    if (imgsWithoutDimensions.length > 0) {
+      issues.push(
+        `${imgsWithoutDimensions.length}/${imgTags.length} images missing width/height attributes (causes CLS)`
+      );
+      lines.push(
+        `- ${imgsWithoutDimensions.length}/${imgTags.length} images missing \`width\`/\`height\` attributes (causes CLS)`
+      );
+    } else {
+      passes.push(`All images have width/height attributes`);
+      lines.push(`- All images have \`width\`/\`height\` attributes. Good.`);
+    }
+
+    if (imgsWithoutLazy.length > 0) {
+      issues.push(
+        `${imgsWithoutLazy.length}/${imgTags.length} images missing loading="lazy"`
+      );
+      lines.push(
+        `- ${imgsWithoutLazy.length}/${imgTags.length} images missing \`loading="lazy"\` (first/hero image should NOT be lazy)`
+      );
+    } else {
+      passes.push(`All images have loading="lazy"`);
+      lines.push(`- All images have \`loading="lazy"\`.`);
+    }
+
+    if (nonOptimalFormats.length > 0) {
+      issues.push(
+        `${nonOptimalFormats.length}/${imgSrcs.length} images not in WebP/AVIF format`
+      );
+      lines.push(
+        `- ${nonOptimalFormats.length}/${imgSrcs.length} image source(s) not in WebP/AVIF format`
+      );
+    } else {
+      passes.push(`All images use modern formats (WebP/AVIF/SVG)`);
+      lines.push(`- All images use modern formats (WebP/AVIF/SVG). Good.`);
+    }
+  }
+  lines.push(``);
+
+  // --- Viewport meta tag ---
+  lines.push(`## Meta Tags`);
+  lines.push(``);
+
+  const hasViewport =
+    /<meta\b[^>]*name\s*=\s*["']viewport["'][^>]*>/i.test(html);
+  if (!hasViewport) {
+    issues.push(`Missing viewport meta tag (critical for mobile)`);
+    lines.push(
+      `- **MISSING:** \`<meta name="viewport">\` -- critical for mobile rendering`
+    );
+  } else {
+    passes.push(`Viewport meta tag present`);
+    lines.push(`- Viewport meta tag: present. Good.`);
+  }
+
+  // --- Meta description ---
+  const hasMetaDesc =
+    /<meta\b[^>]*name\s*=\s*["']description["'][^>]*>/i.test(html);
+  if (!hasMetaDesc) {
+    issues.push(`Missing meta description tag`);
+    lines.push(
+      `- **MISSING:** \`<meta name="description">\` -- important for SERP CTR`
+    );
+  } else {
+    passes.push(`Meta description present`);
+    lines.push(`- Meta description: present. Good.`);
+  }
+
+  // --- Canonical link ---
+  const hasCanonical = /<link\b[^>]*rel\s*=\s*["']canonical["'][^>]*>/i.test(
+    html
+  );
+  if (!hasCanonical) {
+    issues.push(`Missing canonical link tag`);
+    lines.push(
+      `- **MISSING:** \`<link rel="canonical">\` -- needed to prevent duplicate content issues`
+    );
+  } else {
+    passes.push(`Canonical link tag present`);
+    lines.push(`- Canonical link: present. Good.`);
+  }
+  lines.push(``);
+
+  // --- Inline styles ---
+  lines.push(`## Inline Styles`);
+  lines.push(``);
+
+  const inlineStyles = html.match(/<style\b[^>]*>[\s\S]*?<\/style>/gi) || [];
+  let totalInlineStyleBytes = 0;
+  for (const block of inlineStyles) {
+    totalInlineStyleBytes += Buffer.byteLength(block, "utf-8");
+  }
+  const inlineStyleKB = (totalInlineStyleBytes / 1024).toFixed(1);
+
+  if (inlineStyles.length === 0) {
+    lines.push(`No inline \`<style>\` blocks found.`);
+  } else {
+    lines.push(
+      `**${inlineStyles.length} inline \`<style>\` block(s)** totaling ${inlineStyleKB} KB`
+    );
+    if (totalInlineStyleBytes > 5 * 1024) {
+      issues.push(
+        `Inline styles exceed 5 KB (${inlineStyleKB} KB) -- consider externalizing`
+      );
+      lines.push(
+        `**Warning:** Inline styles exceed 5 KB. Consider moving to external stylesheet.`
+      );
+    }
+  }
+  lines.push(``);
+
+  // --- Summary ---
+  lines.push(`## Summary`);
+  lines.push(``);
+  lines.push(`| Category | Count |`);
+  lines.push(`|----------|-------|`);
+  lines.push(`| Issues found | ${issues.length} |`);
+  lines.push(`| Checks passed | ${passes.length} |`);
+  lines.push(``);
+
+  if (issues.length > 0) {
+    lines.push(`### Issues`);
+    lines.push(``);
+    for (const issue of issues) {
+      lines.push(`- ${issue}`);
+    }
+    lines.push(``);
+  }
+
+  if (passes.length > 0) {
+    lines.push(`### Passed`);
+    lines.push(``);
+    for (const pass of passes) {
+      lines.push(`- ${pass}`);
+    }
+    lines.push(``);
+  }
+
+  lines.push(`---`);
+  lines.push(
+    `*Generated by lighthouse-audit.mjs (static analysis fallback) | For full Lighthouse audit, install: npm install -g lighthouse*`
+  );
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // If a local file was provided directly, run static analysis
+  if (localFilePath) {
+    console.error(`Running static HTML analysis on ${localFilePath} ...`);
+    console.error(`(Lighthouse requires a URL — using static analysis mode for local files)`);
+    console.error(``);
+    const report = await runStaticAnalysis(localFilePath);
+    console.log(report);
+    return;
+  }
+
   const lh = await findLighthouse();
 
   if (!lh) {
     console.error(
-      "Lighthouse is not installed.\n\n" +
-        "Install it with one of:\n" +
-        "  npm install -g lighthouse\n" +
-        "  npx lighthouse <url>   (one-time download)\n\n" +
-        "Lighthouse also requires Google Chrome or Chromium."
+      "Lighthouse is not installed and no local file was provided.\n\n" +
+        "Options:\n" +
+        "  1. Install Lighthouse:  npm install -g lighthouse\n" +
+        "  2. Use static analysis: node lighthouse-audit.mjs ./index.html\n\n" +
+        "Lighthouse also requires Google Chrome or Chromium.\n" +
+        "For full Lighthouse audit, install: npm install -g lighthouse"
     );
     process.exit(1);
   }
@@ -371,6 +642,23 @@ async function main() {
     if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ERR_INVALID_URL/.test(err.message)) {
       console.error(`\nThe site at ${url} appears unreachable.`);
       console.error(`Check that the URL is correct and the site is online.`);
+    }
+
+    // Attempt static analysis fallback if there's a local index.html
+    const fallbackPaths = ["./index.html", "./public/index.html", "./dist/index.html", "./out/index.html"];
+    for (const fp of fallbackPaths) {
+      const resolved = resolve(fp);
+      if (existsSync(resolved)) {
+        console.error(
+          `\nFalling back to static analysis of ${resolved} ...`
+        );
+        console.error(
+          `For full Lighthouse audit, install: npm install -g lighthouse`
+        );
+        const fallbackReport = await runStaticAnalysis(resolved);
+        console.log(fallbackReport);
+        return;
+      }
     }
 
     process.exit(2);

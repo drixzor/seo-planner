@@ -16,6 +16,10 @@
  *   2  domain unreachable
  */
 
+import { readFile as fsReadFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+
 // ---------------------------------------------------------------------------
 // Argument parsing
 // ---------------------------------------------------------------------------
@@ -129,6 +133,53 @@ function categorize(urlStr) {
 }
 
 /**
+ * Deeper URL pattern analysis: group by first two path segments for more detail.
+ * e.g., /blog/category/* = 45 URLs, /product/shoes/* = 120 URLs
+ */
+function categorizeDeep(urlStr) {
+  try {
+    const path = new URL(urlStr).pathname;
+    if (path === "/" || path === "") return "/  (homepage)";
+    const segments = path.split("/").filter(Boolean);
+    if (segments.length === 0) return "/  (homepage)";
+    if (segments.length === 1) return `/${segments[0]}/*`;
+    return `/${segments[0]}/${segments[1]}/*`;
+  } catch {
+    return "(unknown)";
+  }
+}
+
+/**
+ * Try to find and read a local sitemap.xml file from common project directories.
+ * Returns { path, body } or null.
+ */
+async function findLocalSitemap() {
+  const candidates = [
+    "sitemap.xml",
+    "public/sitemap.xml",
+    "dist/sitemap.xml",
+    "out/sitemap.xml",
+    "build/sitemap.xml",
+    "static/sitemap.xml",
+  ];
+
+  for (const candidate of candidates) {
+    const fullPath = resolve(candidate);
+    if (existsSync(fullPath)) {
+      try {
+        const body = await fsReadFile(fullPath, "utf-8");
+        if (/<urlset|<sitemapindex/i.test(body)) {
+          return { path: fullPath, body };
+        }
+      } catch {
+        // skip unreadable files
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Spot-check a list of URLs, return status results.
  */
 async function spotCheck(urls, limit = 20) {
@@ -233,10 +284,107 @@ async function buildReport() {
   // Check if domain is reachable at all
   const homeRes = await safeFetch(baseUrl);
   if (!homeRes) {
-    console.error(`ERROR: ${baseUrl} is unreachable.`);
+    console.error(`WARNING: ${baseUrl} is unreachable. Checking for local sitemap files ...`);
+
+    // Fallback: try to find a local sitemap.xml
+    const localSitemap = await findLocalSitemap();
+    if (localSitemap) {
+      console.error(`Found local sitemap: ${localSitemap.path}`);
+      lines.push(`## Local Sitemap Found (domain unreachable)`);
+      lines.push(``);
+      lines.push(
+        `The domain ${baseUrl} is unreachable, but a local sitemap was found at:`
+      );
+      lines.push(`\`${localSitemap.path}\``);
+      lines.push(``);
+
+      const parsed = parseSitemapXml(localSitemap.body);
+      const allUrls = parsed.isSitemapIndex ? [] : parsed.urls;
+
+      if (parsed.isSitemapIndex) {
+        lines.push(`**Type:** Sitemap Index`);
+        lines.push(`**Child sitemaps:** ${parsed.sitemaps.length}`);
+        lines.push(``);
+        lines.push(`| # | Child Sitemap | Last Modified |`);
+        lines.push(`|---|---------------|---------------|`);
+        parsed.sitemaps.forEach((s, i) => {
+          lines.push(`| ${i + 1} | ${s.loc} | ${s.lastmod || "N/A"} |`);
+        });
+        lines.push(``);
+        lines.push(
+          `*Child sitemaps cannot be fetched (domain unreachable). Showing index only.*`
+        );
+      } else {
+        lines.push(`**Type:** URL Set`);
+        lines.push(`**URLs:** ${parsed.urls.length}`);
+        lines.push(``);
+
+        if (parsed.urls.length > 0) {
+          // URL pattern distribution
+          const patterns = {};
+          for (const u of parsed.urls) {
+            const cat = categorize(u.loc);
+            patterns[cat] = (patterns[cat] || 0) + 1;
+          }
+          const sorted = Object.entries(patterns).sort((a, b) => b[1] - a[1]);
+          lines.push(`### URL Patterns`);
+          lines.push(``);
+          lines.push(`| Pattern | Count | % |`);
+          lines.push(`|---------|-------|---|`);
+          for (const [pattern, count] of sorted) {
+            const pct = Math.round((count / parsed.urls.length) * 100);
+            lines.push(`| ${pattern} | ${count} | ${pct}% |`);
+          }
+          lines.push(``);
+
+          // Deep URL patterns
+          const deepPatterns = {};
+          for (const u of parsed.urls) {
+            const cat = categorizeDeep(u.loc);
+            deepPatterns[cat] = (deepPatterns[cat] || 0) + 1;
+          }
+          const deepSorted = Object.entries(deepPatterns).sort(
+            (a, b) => b[1] - a[1]
+          );
+          if (deepSorted.length > Object.keys(patterns).length) {
+            lines.push(`### Detailed URL Patterns (2-level depth)`);
+            lines.push(``);
+            lines.push(`| Pattern | Count | % |`);
+            lines.push(`|---------|-------|---|`);
+            for (const [pattern, count] of deepSorted.slice(0, 25)) {
+              const pct = Math.round((count / parsed.urls.length) * 100);
+              lines.push(`| ${pattern} | ${count} | ${pct}% |`);
+            }
+            lines.push(``);
+          }
+        }
+      }
+
+      lines.push(``);
+      lines.push(`---`);
+      lines.push(`*Generated by sitemap-checker.mjs (local file fallback)*`);
+      console.log(lines.join("\n"));
+      return;
+    }
+
+    // No local sitemap found either
     lines.push(`## Error`);
     lines.push(``);
-    lines.push(`The domain ${baseUrl} is unreachable. Cannot check for sitemaps.`);
+    lines.push(
+      `The domain ${baseUrl} is unreachable and no local sitemap.xml was found.`
+    );
+    lines.push(``);
+    lines.push(`Checked local paths:`);
+    for (const p of [
+      "sitemap.xml",
+      "public/sitemap.xml",
+      "dist/sitemap.xml",
+      "out/sitemap.xml",
+      "build/sitemap.xml",
+      "static/sitemap.xml",
+    ]) {
+      lines.push(`- ${resolve(p)}`);
+    }
     console.log(lines.join("\n"));
     process.exit(2);
   }
@@ -378,6 +526,33 @@ async function buildReport() {
       lines.push(`| ${pattern} | ${count} | ${pct}% |`);
     }
     lines.push(``);
+
+    // Deep URL pattern analysis (2-level depth)
+    const deepPatterns = {};
+    for (const u of allUrls) {
+      const cat = categorizeDeep(u.loc);
+      deepPatterns[cat] = (deepPatterns[cat] || 0) + 1;
+    }
+    const deepSorted = Object.entries(deepPatterns).sort(
+      (a, b) => b[1] - a[1]
+    );
+    // Only show deep patterns if they provide more detail than top-level
+    if (deepSorted.length > sorted.length) {
+      lines.push(`### Detailed URL Patterns (2-level depth)`);
+      lines.push(``);
+      lines.push(`| Pattern | Count | % |`);
+      lines.push(`|---------|-------|---|`);
+      for (const [pattern, count] of deepSorted.slice(0, 30)) {
+        const pct = Math.round((count / allUrls.length) * 100);
+        lines.push(`| ${pattern} | ${count} | ${pct}% |`);
+      }
+      if (deepSorted.length > 30) {
+        lines.push(
+          `| *(${deepSorted.length - 30} more patterns)* | | |`
+        );
+      }
+      lines.push(``);
+    }
 
     // Spot check
     lines.push(`### Spot Check (first 20 URLs)`);

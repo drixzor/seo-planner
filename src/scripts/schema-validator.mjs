@@ -398,7 +398,10 @@ function validateMicrodataItem(item) {
 // Page type detection for recommendations
 // ---------------------------------------------------------------------------
 
-function detectPageType(html, source) {
+/**
+ * Detect page types based on keyword patterns in URL, title, and initial content.
+ */
+function detectPageTypeByKeywords(html, source) {
   const text = html.toLowerCase();
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "";
   const combined = `${source} ${title} ${text.slice(0, 5000)}`;
@@ -425,6 +428,127 @@ function detectPageType(html, source) {
   }
 
   return [...detectedTypes];
+}
+
+/**
+ * Detect page types based on actual HTML elements present in the page.
+ * Returns an array of { type, reason } objects.
+ */
+function detectPageTypeByElements(html) {
+  const detections = [];
+  const textLower = html.toLowerCase();
+
+  // --- Product detection ---
+  const hasPrice =
+    /\$\s*\d+[\d,.]*|\d+[\d,.]*\s*(USD|EUR|GBP)/i.test(html) ||
+    /<[^>]*class\s*=\s*["'][^"']*price[^"']*["']/i.test(html) ||
+    /itemprop\s*=\s*["']price["']/i.test(html);
+  const hasAddToCart =
+    /add[\s-]*to[\s-]*cart|add[\s-]*to[\s-]*bag|buy[\s-]*now/i.test(html) ||
+    /<button[^>]*>.*?(add to cart|buy now).*?<\/button>/is.test(html) ||
+    /<input[^>]*value\s*=\s*["'][^"']*add to cart[^"']*["']/i.test(html);
+  const hasProductImages =
+    /<[^>]*class\s*=\s*["'][^"']*product[^"']*image[^"']*["']/i.test(html) ||
+    /<[^>]*class\s*=\s*["'][^"']*gallery[^"']*["']/i.test(html);
+
+  if (hasPrice && (hasAddToCart || hasProductImages)) {
+    detections.push({
+      type: "Product",
+      reason:
+        "Page contains price elements" +
+        (hasAddToCart ? " and add-to-cart/buy-now buttons" : "") +
+        (hasProductImages ? " and product image gallery" : ""),
+    });
+  }
+
+  // --- Article detection ---
+  const hasLongText =
+    (html.match(/<p\b[^>]*>/gi) || []).length >= 5;
+  const hasAuthor =
+    /\b(author|by\s+[A-Z][a-z]+\s+[A-Z][a-z]+)\b/i.test(html) ||
+    /<[^>]*class\s*=\s*["'][^"']*author[^"']*["']/i.test(html) ||
+    /itemprop\s*=\s*["']author["']/i.test(html) ||
+    /<[^>]*rel\s*=\s*["']author["']/i.test(html);
+  const hasDatePublished =
+    /<time\b[^>]*>/i.test(html) ||
+    /itemprop\s*=\s*["']datePublished["']/i.test(html) ||
+    /<[^>]*class\s*=\s*["'][^"']*date[^"']*["']/i.test(html) ||
+    /\b(published|posted)\s*(on|:)\s*\w+\s+\d{1,2},?\s+\d{4}/i.test(html);
+
+  if (hasLongText && (hasAuthor || hasDatePublished)) {
+    detections.push({
+      type: "Article",
+      reason:
+        "Page contains long-form text content" +
+        (hasAuthor ? " with author attribution" : "") +
+        (hasDatePublished ? " and publication date" : ""),
+    });
+  }
+
+  // --- FAQ detection ---
+  const hasFaqStructure =
+    (html.match(/<(details|summary)\b/gi) || []).length >= 2 ||
+    (html.match(/class\s*=\s*["'][^"']*faq[^"']*["']/gi) || []).length >= 1 ||
+    (html.match(/class\s*=\s*["'][^"']*accordion[^"']*["']/gi) || []).length >= 1;
+  const hasQAPairs =
+    (textLower.match(/\?\s*<\//g) || []).length >= 3 ||
+    (html.match(/<h[2-4][^>]*>.*?\?.*?<\/h[2-4]>/gi) || []).length >= 3;
+
+  if (hasFaqStructure || hasQAPairs) {
+    detections.push({
+      type: "FAQPage",
+      reason: hasFaqStructure
+        ? "Page contains FAQ/accordion elements"
+        : "Page contains multiple question-format headings",
+    });
+  }
+
+  // --- LocalBusiness detection ---
+  const hasAddress =
+    /<address\b/i.test(html) ||
+    /itemprop\s*=\s*["']address["']/i.test(html) ||
+    /<[^>]*class\s*=\s*["'][^"']*address[^"']*["']/i.test(html);
+  const hasPhone =
+    /\b(tel:|phone|call\s*us|telephone)\b/i.test(html) ||
+    /href\s*=\s*["']tel:/i.test(html) ||
+    /\(\d{3}\)\s*\d{3}[-.]\d{4}|\+\d{1,3}[\s.-]?\d{2,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}/i.test(html);
+  const hasHours =
+    /\b(opening\s*hours|business\s*hours|hours\s*of\s*operation|mon|tue|wed|thu|fri|sat|sun)\b.*\d{1,2}[:.]\d{2}/i.test(
+      html
+    ) ||
+    /<[^>]*class\s*=\s*["'][^"']*hours[^"']*["']/i.test(html);
+
+  if (hasAddress && (hasPhone || hasHours)) {
+    detections.push({
+      type: "LocalBusiness",
+      reason:
+        "Page contains address information" +
+        (hasPhone ? " and phone number" : "") +
+        (hasHours ? " and business hours" : ""),
+    });
+  }
+
+  return detections;
+}
+
+/**
+ * Combined page type detection: keywords + element analysis.
+ */
+function detectPageType(html, source) {
+  const keywordTypes = detectPageTypeByKeywords(html, source);
+  const elementDetections = detectPageTypeByElements(html);
+
+  // Merge: use Set to deduplicate
+  const allTypes = new Set(keywordTypes);
+  for (const d of elementDetections) {
+    allTypes.add(d.type);
+  }
+
+  return {
+    types: [...allTypes],
+    elementDetections,
+    keywordTypes,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -569,8 +693,8 @@ function buildReport({ source, jsonLdBlocks, microdataItems, html }) {
     ...microdataValidations.map((v) => v.type).filter(Boolean),
   ]);
 
-  const suggestedTypes = detectPageType(html, source);
-  const missingTypes = suggestedTypes.filter((t) => !foundTypes.has(t));
+  const pageTypeResult = detectPageType(html, source);
+  const missingTypes = pageTypeResult.types.filter((t) => !foundTypes.has(t));
 
   lines.push(`## Recommendations`);
   lines.push(``);
@@ -580,6 +704,38 @@ function buildReport({ source, jsonLdBlocks, microdataItems, html }) {
       `This page has no structured data at all. Adding JSON-LD structured data ` +
         `is one of the highest-impact SEO improvements you can make.`
     );
+    lines.push(``);
+  }
+
+  // Element-based detections (specific, evidence-based recommendations)
+  if (pageTypeResult.elementDetections.length > 0) {
+    lines.push(`### Page Content Analysis`);
+    lines.push(``);
+    lines.push(
+      `The following page types were detected based on HTML element analysis:`
+    );
+    lines.push(``);
+
+    for (const detection of pageTypeResult.elementDetections) {
+      const alreadyPresent = foundTypes.has(detection.type);
+      const status = alreadyPresent ? "PRESENT" : "MISSING";
+      lines.push(
+        `- **${detection.type}** [${status}]: ${detection.reason}`
+      );
+      if (!alreadyPresent) {
+        const reqs = SCHEMA_REQUIREMENTS[detection.type];
+        if (reqs) {
+          lines.push(
+            `  - Required properties: \`${reqs.required.join("`, `")}\``
+          );
+          if (reqs.recommended.length > 0) {
+            lines.push(
+              `  - Recommended: \`${reqs.recommended.join("`, `")}\``
+            );
+          }
+        }
+      }
+    }
     lines.push(``);
   }
 
@@ -593,10 +749,21 @@ function buildReport({ source, jsonLdBlocks, microdataItems, html }) {
 
     for (const type of missingTypes) {
       const reqs = SCHEMA_REQUIREMENTS[type];
+      // Check if this type was detected by element analysis (stronger signal)
+      const elementDetection = pageTypeResult.elementDetections.find(
+        (d) => d.type === type
+      );
+      const priority = elementDetection ? "HIGH" : "MEDIUM";
+
       if (reqs) {
-        lines.push(`- **${type}** -- required properties: \`${reqs.required.join("`, `")}\``);
+        lines.push(
+          `- **${type}** [${priority} priority] -- required properties: \`${reqs.required.join("`, `")}\``
+        );
+        if (elementDetection) {
+          lines.push(`  - Evidence: ${elementDetection.reason}`);
+        }
       } else {
-        lines.push(`- **${type}**`);
+        lines.push(`- **${type}** [${priority} priority]`);
       }
     }
     lines.push(``);

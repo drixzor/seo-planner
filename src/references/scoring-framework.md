@@ -317,3 +317,198 @@ Week 4: Publishing + monitoring + sprint review
 - History of black-hat SEO (PBNs, link spam, cloaking)
 - Site is on a platform that limits SEO control (some website builders)
 - Multiple failed SEO engagements with no post-mortem understanding
+
+---
+
+## Exact Scoring Criteria (1-5 Scale)
+
+When a quick 1-5 score is needed instead of the full 0-10 scale above, use these precise definitions. Each score level has concrete, observable criteria so two different assessors produce the same score.
+
+### Site Optimization (S) — 1 to 5
+
+**Score 1: Broken Foundation**
+- Lighthouse Performance score < 30
+- No HTTPS or SSL certificate errors / mixed content warnings
+- Mobile experience broken (no viewport meta tag, horizontal scrolling, tiny text)
+- No XML sitemap submitted
+- robots.txt missing or blocking important pages
+- Multiple critical crawl errors in Search Console
+
+**Score 2: Minimal Viability**
+- Lighthouse Performance score 30-60
+- HTTPS present but mixed content warnings on some pages
+- Mobile works but experience is poor (slow, layout issues, small tap targets)
+- XML sitemap exists but contains errors (404 URLs, non-canonical URLs)
+- Some schema markup attempted but has validation errors
+- Several redirect chains or broken internal links
+
+**Score 3: Solid Basics**
+- Lighthouse Performance score 60-80
+- HTTPS clean, no mixed content
+- Mobile experience good (responsive, readable, functional)
+- XML sitemap valid, submitted in Search Console
+- Some structured data implemented correctly (BreadcrumbList, Organization)
+- Crawl mostly clean with minor issues (a few soft 404s, minor redirect chains)
+- Core Web Vitals: 1-2 in "Needs Improvement" range
+
+**Score 4: Strong Technical Foundation**
+- Lighthouse Performance score 80-90
+- Core Web Vitals mostly green (LCP < 2.5s, CLS < 0.1, INP < 200ms on most pages)
+- Full schema markup for relevant page types (Article, Product, FAQ, BreadcrumbList)
+- Clean crawl: zero critical errors, < 5 warnings
+- Proper canonical tags, hreflang (if international), pagination handling
+- JavaScript content fully renderable by Googlebot
+
+**Score 5: Best in Class**
+- Lighthouse Performance score 90+
+- All Core Web Vitals green across all page templates (verified in CrUX data)
+- Comprehensive schema markup covering every page type with zero validation errors
+- Zero crawl errors, zero redirect chains, 100% indexation of target pages
+- Edge-optimized delivery (CDN, HTTP/3, Brotli compression)
+- Proactive monitoring with automated alerts for regressions
+
+### Content Production (C) — 1 to 5
+
+**Score 1: No Strategy**
+- Fewer than 10 indexable content pages
+- No keyword targeting — content published randomly or not at all
+- No topical map or content plan
+- No regular publishing cadence
+- Content is thin (< 300 words), duplicate, or auto-generated without review
+
+**Score 2: Early Efforts**
+- Some keyword targeting on a few pages
+- No formal topical map, topics chosen ad hoc
+- Irregular publishing (less than 2 pieces per month)
+- No content briefs or editorial process
+- Internal linking is sparse and unstructured
+
+**Score 3: Organized Production**
+- Topical map exists and covers at least 50% of the target topic space
+- 1-2 pillar pages published with supporting cluster articles
+- Regular publishing cadence (2+ articles per month)
+- Content briefs used for most articles
+- Internal linking follows a basic hub-and-spoke pattern
+- Search intent is considered for new content
+
+**Score 4: Mature Content Program**
+- Full topical map with 3+ pillar topics and complete cluster coverage
+- Content briefs used for every article, with SERP analysis included
+- Publishing cadence of 4+ articles per month
+- E-E-A-T signals present (author bios, expert credentials, cited sources)
+- Content refresh schedule active (declining pages identified and updated quarterly)
+- Strong internal linking with no orphan pages
+
+**Score 5: Dominant Topical Authority**
+- Complete topical coverage — recognized as a go-to resource in the niche
+- Programmatic SEO or content at scale where applicable
+- Regular content refresh cycle (monthly review of declining pages)
+- Publishing cadence of 8+ pieces per month (mix of new and updated)
+- Original research, proprietary data, or unique frameworks published
+- Content contributes measurably to revenue (tracked attribution)
+
+### Outside Signals (O) — 1 to 5
+
+**Score 1: No Backlink Profile**
+- Zero or near-zero referring domains (< 10)
+- No brand presence on social platforms or directories
+- Domain Rating / Domain Authority effectively zero
+- No active link building of any kind
+
+**Score 2: Foundational Only**
+- Basic directory listings and social profiles created (10-50 referring domains)
+- No active outreach or digital PR
+- Low DR (< 20), most links are from low-quality or generic sources
+- No content designed for link attraction (no data, tools, or research)
+
+**Score 3: Growing Profile**
+- 50-200 referring domains, some from quality sources (DR 30+)
+- Foundational backlinks complete (directories, social, DR 90+ platforms)
+- Some link building activity (HARO responses, occasional guest posts)
+- Healthy anchor text distribution (not over-optimized)
+- Competitor backlink gap identified but not yet systematically closed
+
+**Score 4: Strong Authority**
+- 200+ referring domains with consistent monthly growth (15-30 new/month)
+- Active digital PR producing links from DR 50+ publications
+- Content assets designed for linkability (statistics pages, free tools, research)
+- Anchor text profile looks natural across branded, partial match, and generic
+- Competitor gap systematically targeted with outreach campaigns
+
+**Score 5: Dominant Authority**
+- 500+ referring domains or DR 60+
+- Links from top-tier publications in the niche (earned, not paid)
+- Strong brand signals (high branded search volume, unlinked mentions)
+- Passive link growth from existing assets (pages that attract links without outreach)
+- Toxic link ratio < 2%, clean disavow file maintained
+
+### Rank Enhancement (R) — 1 to 5
+
+**Score 1: Publish and Forget**
+- Content published and never revisited
+- No rank tracking beyond occasional manual searches
+- No experiments, no A/B testing, no optimization of existing pages
+- No featured snippet targeting
+
+**Score 2: Occasional Updates**
+- Some pages refreshed when obviously outdated
+- Rank tracking set up but reviewed infrequently
+- No systematic process for identifying optimization opportunities
+- Title tags and meta descriptions not tested or optimized for CTR
+
+**Score 3: Regular Optimization**
+- Content refresh schedule in place (top 10 declining pages reviewed monthly)
+- Featured snippet targeting for key queries (paragraph, list, table formats)
+- "Striking distance" keywords identified (positions 4-20) with a plan to push them
+- Some title tag testing based on Search Console CTR data
+
+**Score 4: Active Growth Program**
+- Systematic content refresh with documented before/after results
+- Title tag and meta description testing with measurable CTR improvements
+- Featured snippets actively won and defended
+- Quick-win pages optimized every sprint (high impressions, low CTR)
+- Growth experiments documented (hypothesis, test, result, next action)
+- Internal linking updated regularly as new content publishes
+
+**Score 5: Data-Driven Optimization Machine**
+- Continuous experimentation across content, titles, formats, and CTAs
+- Rapid iteration cycle (test results reviewed weekly, not monthly)
+- Process for scaling winners (when a format works, replicate it across clusters)
+- Cannibalization detected and resolved proactively
+- Automated alerts for ranking drops on key pages
+- Every optimization action tracked to organic traffic and revenue impact
+
+### Evaluate Results (E) — 1 to 5
+
+**Score 1: No Tracking**
+- No analytics installed, or installed but not configured
+- No Search Console access or monitoring
+- No understanding of what organic traffic exists or where it comes from
+- No reporting of any kind
+
+**Score 2: Basic Tracking**
+- GA4 installed but not fully configured (missing event tracking, no goals)
+- Search Console connected but reviewed rarely (monthly at best)
+- No rank tracking tool in use
+- Reports are manual and ad hoc
+
+**Score 3: Regular Reporting**
+- GA4 properly configured with key events tracked (form submissions, clicks)
+- Search Console reviewed weekly for errors and performance trends
+- Rank tracking active for 50+ target keywords
+- Monthly report produced with traffic, rankings, and key wins
+- Basic segmentation (organic vs other, branded vs non-branded)
+
+**Score 4: Data-Driven Decisions**
+- Automated dashboard (Looker Studio, Databox) accessible to stakeholders
+- Weekly monitoring cadence with alerts for anomalies
+- Clear KPIs tied to business outcomes (leads, revenue, not just traffic)
+- Conversion tracking and revenue attribution for organic channel
+- Competitive benchmarking tracked quarterly
+
+**Score 5: Full Attribution and Optimization Loop**
+- Every SEO action tracked to its outcome (content published -> rankings -> traffic -> conversions -> revenue)
+- Forecasting model based on historical data (projected traffic and revenue)
+- Automated alerts for traffic drops, ranking changes, and indexation issues
+- ROI calculated and reported (SEO investment vs organic revenue generated)
+- Continuous improvement loop: data informs next sprint's priorities

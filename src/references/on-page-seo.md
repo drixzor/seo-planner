@@ -377,3 +377,112 @@ Use this checklist when auditing or optimizing any page:
 - [ ] Page loads in < 2.5s (LCP)
 - [ ] Mobile-friendly
 ```
+
+---
+
+## Search Intent Diagnosis Framework
+
+A step-by-step process for verifying that your content matches what Google actually wants to rank for a given keyword. Intent mismatch is the most common reason good content fails to rank.
+
+### Step 1: Google the Target Keyword
+- Use an incognito/private window (avoids personalization bias)
+- Search from the target country (use a VPN or Google's country-specific domain if needed)
+- Record what you see before clicking any result
+
+### Step 2: Analyze Top 5 Results
+For each of the top 5 organic results, note:
+- **Content type**: blog post, product page, landing page, tool, video, Wikipedia entry
+- **Content format**: how-to guide, listicle, comparison table, step-by-step, definition
+- **Content angle**: beginner-focused, expert-level, budget-focused, speed-focused, year-specific
+- **Word count**: rough estimate (use a word counter extension or Ahrefs)
+
+Look for the dominant pattern. If 4 out of 5 results are listicles, Google wants a listicle.
+
+### Step 3: Check SERP Features
+Each SERP feature signals a specific intent:
+- **Featured snippet** (paragraph/list/table) = informational, Google wants a direct answer
+- **Shopping results / product carousel** = transactional, searchers want to buy
+- **People Also Ask (PAA)** = informational with depth, cover these questions in your content
+- **Local pack (map + 3 results)** = local intent, needs LocalBusiness schema + GMB
+- **Video carousel** = video intent, consider creating video content
+- **Knowledge panel** = navigational/entity, hard to compete with unless you are the entity
+- **Image pack** = visual intent, optimize images and consider an image-heavy format
+
+### Step 4: Match Your Content Format to What Ranks
+Create content that matches the dominant type, format, and angle. Do not fight the SERP.
+
+### Intent Mismatch Examples (Common Mistakes)
+
+| Keyword | What Ranks (SERP Reality) | Common Mistake | Fix |
+|---------|--------------------------|----------------|-----|
+| "best CRM" | Comparison listicles (10 Best CRM Software) | Publishing a product page for your CRM | Write a comparison list featuring your CRM alongside competitors |
+| "CRM pricing" | Pricing pages with tables and tiers | Publishing a blog post about CRM costs | Create a pricing page with transparent pricing table |
+| "how to use CRM" | Step-by-step tutorials with screenshots | Publishing a feature page listing CRM capabilities | Write a tutorial with numbered steps, screenshots, and examples |
+| "CRM vs ERP" | Side-by-side comparison articles | Publishing a glossary page defining CRM | Write a detailed comparison with a feature-by-feature table |
+| "CRM" (head term) | Mix of definitions, software lists, and Wikipedia | Publishing any single-intent page | Check which sub-intent dominates; usually "what is" + "best" split |
+
+### When Intent is Mixed or Unclear
+- If the SERP shows a mix of content types (some blogs, some products), the keyword has **fractured intent**
+- Strategy: pick the intent that best matches your business goal and your strongest content type
+- Consider creating two pages targeting different intents from the same keyword area
+- Monitor which page Google prefers by tracking the ranking URL over 4-8 weeks
+
+---
+
+## Ranking Stagnation Diagnosis
+
+When a page ranks at positions 8-15 for 4+ weeks and stops climbing, use this systematic checklist to diagnose and fix the bottleneck.
+
+### Symptom Recognition
+- Page ranked in positions 8-15 consistently for 4+ weeks
+- No upward movement despite the page being indexed and receiving impressions
+- Possibly slight fluctuation (position 9 one week, position 12 the next) without a clear trend
+
+### Diagnostic Checklist
+
+**Check 1: Is Content Thin Compared to Competitors?**
+- Compare your page's word count against the top 3 results
+- Compare depth: do they cover subtopics you miss?
+- Compare media: do they have images, videos, tables, or interactive elements you lack?
+- Fix: expand content to match or exceed top results in depth and comprehensiveness
+
+**Check 2: Is the Page Getting Clicks?**
+- In Google Search Console, check the page's CTR for its target keyword
+- If CTR is below the expected rate for its position (position 10 should get ~2-3%), the title/meta description is not compelling enough
+- Fix: rewrite title tag with a stronger hook (numbers, power words, current year). Rewrite meta description with a clear value proposition and call to action.
+
+**Check 3: Are Competitors' Pages Newer?**
+- Check the publication or "last updated" date of the top 3 results
+- If they updated within the last 3 months and your page is 12+ months old, freshness is a factor
+- Fix: update the page with new data, new sections, and a current "last updated" date
+
+**Check 4: Is Internal Linking Weak?**
+- Use Screaming Frog or Ahrefs to count how many internal pages link to this page
+- If the top 3 results on competitor sites have significantly more internal links, your page lacks authority flow
+- Fix: add contextual internal links from 5-10 relevant, high-traffic pages on your site
+
+**Check 5: Does the Page Have Enough Backlinks?**
+- Compare the referring domains pointing to your page vs. the top 3 results' pages
+- If competitors have 10-50+ referring domains and you have 0-5, backlinks are the bottleneck
+- Fix: prioritize link building to this specific page (guest posts, resource outreach, digital PR)
+
+**Check 6: Was There a Recent Algorithm Update?**
+- Check SEO industry news (Search Engine Land, Search Engine Journal, Barry Schwartz on X)
+- If a core update happened recently, wait 2-4 weeks for rankings to stabilize before making changes
+- Fix: if the update targeted your issue (thin content, low E-E-A-T, spam), address those root causes
+
+### Fix Priority Order
+When multiple issues are found, fix in this order (highest impact first):
+1. **Content depth and intent match** — most common bottleneck, highest ROI
+2. **Title tag and meta description for CTR** — quick win, no content rewrite needed
+3. **Internal links** — free, fast, compounds over time
+4. **Content freshness update** — moderate effort, signals relevance
+5. **Backlink building** — highest effort, longest time to impact but essential for competitive keywords
+6. **Wait for algorithm stabilization** — only if a recent update is confirmed
+
+### Stagnation Tracking Table
+
+| Page URL | Target KW | Current Pos. | Weeks Stuck | Diagnosis | Fix Applied | Date Fixed | New Pos. (4w) |
+|----------|----------|-------------|-------------|-----------|-------------|------------|---------------|
+| /page/ | [kw] | 11 | 6 | Thin content | Added 800 words + 3 images | 2026-05-01 | [check] |
+| /page/ | [kw] | 9 | 8 | Low CTR (1.2%) | Rewrote title + meta | 2026-05-03 | [check] |

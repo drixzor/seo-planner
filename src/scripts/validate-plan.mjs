@@ -9,7 +9,7 @@
 // Exit code 0 if no ERRORs, exit code 1 if any ERROR found.
 // Requires Node.js 18+.
 
-import { readFileSync, existsSync, readdirSync } from "fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 
 const cwd = process.cwd();
@@ -66,6 +66,24 @@ function extractField(content, pattern) {
   return match ? match[1].trim() : null;
 }
 
+/**
+ * Extract a markdown section body by heading.
+ * Finds "## heading" and returns everything until the next "## " or end of string.
+ */
+function extractSection(content, heading) {
+  if (!content) return null;
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const headerIdx = content.search(new RegExp(`^## ${escapedHeading}`, "m"));
+  if (headerIdx < 0) return null;
+  const afterHeader = content.indexOf("\n", headerIdx);
+  if (afterHeader < 0) return "";
+  const bodyStart = afterHeader + 1;
+  // Find next ## heading (not just "##" inside a word)
+  const nextSection = content.indexOf("\n## ", bodyStart);
+  const body = nextSection >= 0 ? content.slice(bodyStart, nextSection) : content.slice(bodyStart);
+  return body;
+}
+
 function sectionHasContent(content, heading) {
   if (!content) return false;
   const pattern = new RegExp(
@@ -118,6 +136,12 @@ function isValidTransition(from, to) {
   if (to === "CLOSE") return true;
   return VALID_TRANSITIONS.has(`${from}->${to}`);
 }
+
+// ---------------------------------------------------------------------------
+// Allowed severity labels for audit files
+// ---------------------------------------------------------------------------
+
+const ALLOWED_SEVERITIES = new Set(["CRITICAL", "HIGH", "MEDIUM", "LOW"]);
 
 // ---------------------------------------------------------------------------
 // Checks
@@ -212,14 +236,11 @@ function checkStateValidity(stateContent) {
 function checkStateTransitions(stateContent) {
   if (!stateContent) return;
   // Parse transition history
-  const historyMatch = stateContent.match(
-    /^## Transition History:\s*\n([\s\S]*?)(?=\n## |$)/m
-  );
-  if (!historyMatch) {
+  const historyBlock = extractSection(stateContent, "Transition History:");
+  if (historyBlock === null) {
     warn("No transition history found in state.md");
     return;
   }
-  const historyBlock = historyMatch[1];
   // Match lines like "- INIT -> AUDIT (...)" or "- INIT --> AUDIT (...)" etc.
   const transitionLines = historyBlock.match(
     /^- (.+?)$/gm
@@ -446,6 +467,319 @@ function checkComplexityBudget(planContent, currentState) {
 }
 
 // ---------------------------------------------------------------------------
+// NEW CHECK: Content quality validation for audit files
+// ---------------------------------------------------------------------------
+
+function checkAuditContentQuality(planDirName) {
+  const auditDir = join(plansDir, planDirName, "audit");
+  if (!existsSync(auditDir)) return;
+
+  const auditFiles = ["technical.md", "content.md", "backlinks.md", "competitors.md"];
+  let placeholderCount = 0;
+
+  for (const file of auditFiles) {
+    const filePath = join(auditDir, file);
+    const content = readFile(filePath);
+    if (!content) continue;
+
+    const lines = content.split("\n");
+    const nonEmptyLines = lines.filter((l) => l.trim());
+
+    // Check 1: Too few non-empty lines = placeholder
+    if (nonEmptyLines.length < 10) {
+      warn(`Audit file audit/${file} appears to be placeholder only (fewer than 10 non-empty lines)`);
+      placeholderCount++;
+      continue;
+    }
+
+    // Check 2: All non-empty lines are headings, italics, or table borders
+    const contentLines = nonEmptyLines.filter((l) => {
+      const trimmed = l.trim();
+      if (trimmed.startsWith("#")) return false;
+      if (/^\*[^*]/.test(trimmed) && trimmed.endsWith("*")) return false; // italic line
+      if (/^\|[-\s|:]+\|$/.test(trimmed)) return false; // table separator |---|---|
+      return true;
+    });
+
+    if (contentLines.length < 3) {
+      warn(`Audit file audit/${file} appears to be placeholder only (no substantive content)`);
+      placeholderCount++;
+      continue;
+    }
+
+    // Check 3: Issues Found table should have at least 1 data row
+    const issuesTableMatch = content.match(
+      /## Issues Found\s*\n([\s\S]*?)(?=\n## |$)/m
+    );
+    if (issuesTableMatch) {
+      const tableBody = issuesTableMatch[1].trim();
+      const tableLines = tableBody.split("\n").filter((l) => l.trim());
+      // Filter out header row and separator row
+      const dataRows = tableLines.filter((l) => {
+        const trimmed = l.trim();
+        if (!trimmed.startsWith("|")) return false;
+        if (/^\|[-\s|:]+\|$/.test(trimmed)) return false; // separator
+        if (/\|\s*#\s*\|/.test(trimmed)) return false; // header row with # column
+        if (/\|\s*Issue\s*\|/.test(trimmed)) return false; // header row
+        return true;
+      });
+      if (dataRows.length === 0) {
+        warn(`Audit file audit/${file}: Issues Found table has no data rows`);
+      }
+    }
+
+    // Check 4: Severity labels validation
+    checkAuditSeverityLabels(content, file);
+  }
+
+  if (placeholderCount === 0) {
+    pass("Audit files have substantive content (not placeholders)");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NEW CHECK: Severity classification in audit files
+// ---------------------------------------------------------------------------
+
+function checkAuditSeverityLabels(content, filename) {
+  // Look for table rows in Issues Found section
+  const issuesTableMatch = content.match(
+    /## Issues Found\s*\n([\s\S]*?)(?=\n## |$)/m
+  );
+  if (!issuesTableMatch) return;
+
+  const tableBody = issuesTableMatch[1].trim();
+  const tableLines = tableBody.split("\n").filter((l) => l.trim().startsWith("|"));
+  // Skip header and separator
+  const dataRows = tableLines.filter((l) => {
+    const trimmed = l.trim();
+    if (/^\|[-\s|:]+\|$/.test(trimmed)) return false;
+    if (/\|\s*#\s*\|/.test(trimmed) && /\|\s*Issue\s*\|/.test(trimmed)) return false;
+    return true;
+  });
+
+  if (dataRows.length === 0) return;
+
+  let hasAnySeverity = false;
+  let hasInvalidSeverity = false;
+
+  for (const row of dataRows) {
+    const cells = row.split("|").map((c) => c.trim()).filter(Boolean);
+    // Severity is typically in column 3 (0: #, 1: Issue, 2: Severity)
+    if (cells.length >= 3) {
+      const severityCell = cells[2].toUpperCase();
+      if (ALLOWED_SEVERITIES.has(severityCell)) {
+        hasAnySeverity = true;
+      } else if (severityCell && severityCell !== "SEVERITY" && severityCell !== "") {
+        // It has a value but not from the allowed set
+        const isAllowed = [...ALLOWED_SEVERITIES].some((s) => severityCell.includes(s));
+        if (!isAllowed && severityCell !== "PENDING") {
+          hasInvalidSeverity = true;
+        }
+      }
+    }
+  }
+
+  if (dataRows.length > 0 && !hasAnySeverity && !hasInvalidSeverity) {
+    warn(`Audit audit/${filename}: issues missing severity classification (use CRITICAL/HIGH/MEDIUM/LOW)`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NEW CHECK: Cross-file consistency
+// ---------------------------------------------------------------------------
+
+function checkCrossFileConsistency(planDirName) {
+  const planContent = readFile(join(plansDir, planDirName, "plan.md"));
+  const progressContent = readFile(join(plansDir, planDirName, "progress.md"));
+  const decisionsContent = readFile(join(plansDir, planDirName, "decisions.md"));
+  const stateContent = readFile(join(plansDir, planDirName, "state.md"));
+  const verificationContent = readFile(join(plansDir, planDirName, "verification.md"));
+
+  let issues = 0;
+
+  // Check 1: Steps marked [x] in plan.md should have corresponding "Completed" entry in progress.md
+  if (planContent && progressContent) {
+    const stepsBody = extractSection(planContent, "Steps");
+    if (stepsBody) {
+      const completedSteps = stepsBody.match(/^[-*]\s*\[x\]\s*(.+)$/gmi) || [];
+
+      const completedBody = extractSection(progressContent, "Completed") || "";
+
+      for (const stepLine of completedSteps) {
+        const stepText = stepLine.replace(/^[-*]\s*\[x\]\s*/i, "").trim();
+        // Extract first meaningful words for matching (at least first 20 chars or first phrase)
+        const matchPhrase = stepText.slice(0, 30).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        if (matchPhrase && !completedBody.match(new RegExp(matchPhrase.slice(0, 15), "i"))) {
+          warn(`Step marked [x] in plan.md not found in progress.md Completed section: "${stepText.slice(0, 60)}"`);
+          issues++;
+        }
+      }
+    }
+  }
+
+  // Check 2: PIVOT in decisions.md should have PIVOT transition in state.md
+  if (decisionsContent && stateContent) {
+    const hasPivotDecision = /\bPIVOT\b/i.test(decisionsContent);
+    if (hasPivotDecision) {
+      const historyBody = extractSection(stateContent, "Transition History:") || "";
+      const hasPivotTransition = /(?:->|-->|\u2192)\s*PIVOT/i.test(historyBody);
+      if (!hasPivotTransition) {
+        warn("PIVOT entry found in decisions.md but no PIVOT transition in state.md history");
+        issues++;
+      }
+    }
+  }
+
+  // Check 3: Keyword targets in plan.md should have corresponding rows in verification.md
+  if (planContent && verificationContent) {
+    // Look for keyword mentions in plan Goal or KPI Targets
+    const kpiBody = extractSection(planContent, "KPI Targets");
+    if (kpiBody) {
+      const hasKeywordRows = /\|\s*(?:Top 10 Keywords|Avg Position|Keywords?)\s*\|/i.test(kpiBody);
+      if (hasKeywordRows) {
+        const hasVerificationKeywords = /keyword/i.test(verificationContent);
+        if (!hasVerificationKeywords) {
+          warn("plan.md has keyword targets in KPI but verification.md has no keyword-related checks");
+          issues++;
+        }
+      }
+    }
+  }
+
+  if (issues === 0) {
+    pass("Cross-file consistency checks passed");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NEW CHECK: Dependency enforcement
+// ---------------------------------------------------------------------------
+
+function parsePlanSteps(planContent) {
+  if (!planContent) return [];
+
+  const stepsBody = extractSection(planContent, "Steps");
+  if (!stepsBody) return [];
+  const stepLines = stepsBody.match(/^[-*]\s*\[[ x]\]\s*.+$/gmi) || [];
+
+  const steps = [];
+  let stepNum = 0;
+
+  for (const line of stepLines) {
+    stepNum++;
+    const completed = /\[x\]/i.test(line);
+    const text = line.replace(/^[-*]\s*\[[ x]\]\s*/i, "").trim();
+
+    // Parse [deps: N,M] pattern
+    const depsMatch = text.match(/\[deps?:\s*([^\]]+)\]/i);
+    const deps = [];
+    if (depsMatch) {
+      const depsStr = depsMatch[1];
+      for (const d of depsStr.split(",")) {
+        const num = parseInt(d.trim(), 10);
+        if (!isNaN(num)) deps.push(num);
+      }
+    }
+
+    // Try to extract explicit step number like "1." or "Step 1:"
+    const explicitNum = text.match(/^(\d+)[.:)\s]/);
+    const id = explicitNum ? parseInt(explicitNum[1], 10) : stepNum;
+
+    steps.push({ id, completed, text, deps });
+  }
+
+  return steps;
+}
+
+function checkDependencyEnforcement(planContent) {
+  const steps = parsePlanSteps(planContent);
+  if (steps.length === 0) return;
+
+  const completedIds = new Set(steps.filter((s) => s.completed).map((s) => s.id));
+  let violations = 0;
+
+  for (const step of steps) {
+    if (!step.completed) continue;
+    if (step.deps.length === 0) continue;
+
+    for (const dep of step.deps) {
+      if (!completedIds.has(dep)) {
+        error(`Step ${step.id} completed before dependency ${dep}: "${step.text.slice(0, 60)}"`);
+        violations++;
+      }
+    }
+  }
+
+  if (violations === 0 && steps.some((s) => s.deps.length > 0)) {
+    pass("Dependency enforcement: all completed steps have their dependencies met");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NEW CHECK: Momentum/oscillation detection (pivot counting)
+// ---------------------------------------------------------------------------
+
+function checkMomentumOscillation(stateContent) {
+  if (!stateContent) return;
+
+  const historyBody = extractSection(stateContent, "Transition History:");
+  if (!historyBody) return;
+  const transitionPattern = /(\w+)\s*(?:->|-->|→)\s*(\w+)/g;
+
+  let pivotCount = 0;
+  let match;
+  while ((match = transitionPattern.exec(historyBody)) !== null) {
+    const to = match[2].toUpperCase();
+    if (to === "PIVOT") {
+      pivotCount++;
+    }
+  }
+
+  if (pivotCount >= 3) {
+    error(`Excessive pivots: ${pivotCount} (3+). Sprint must be decomposed into smaller sprints.`);
+  } else if (pivotCount >= 2) {
+    warn(`Oscillation detected: ${pivotCount} pivots in this sprint. Consider decomposing.`);
+  } else {
+    pass(`Pivot count OK: ${pivotCount}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NEW CHECK: LESSONS.md health check
+// ---------------------------------------------------------------------------
+
+function checkLessonsHealth(planDirName, currentState) {
+  const lessonsPath = join(plansDir, "LESSONS.md");
+  if (!existsSync(lessonsPath)) return;
+
+  const lessonsContent = readFile(lessonsPath);
+  if (!lessonsContent) return;
+
+  const lineCount = lessonsContent.split("\n").length;
+  if (lineCount > 200) {
+    warn(`LESSONS.md exceeds 200-line cap (currently ${lineCount} lines)`);
+  }
+
+  // If sprint is at CLOSE, check if LESSONS.md was updated this sprint
+  if (currentState === "CLOSE") {
+    try {
+      const stat = statSync(lessonsPath);
+      const planDir = join(plansDir, planDirName);
+      const stateStat = statSync(join(planDir, "state.md"));
+      // If LESSONS.md was last modified before state.md (i.e. before the close transition),
+      // it likely wasn't updated this sprint. Use a 60-second grace period.
+      const timeDiff = stateStat.mtimeMs - stat.mtimeMs;
+      if (timeDiff > 60000) {
+        warn("LESSONS.md not updated during CLOSE (last modified before sprint close)");
+      }
+    } catch {
+      // Cannot stat files -- skip this check
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -459,7 +793,7 @@ function main() {
   const stateContent = readFile(join(plansDir, planDirName, "state.md"));
   const planContent = readFile(join(plansDir, planDirName, "plan.md"));
 
-  // Run all checks
+  // Run all original checks
   checkRequiredFiles(planDirName);
   checkAuditDirectory(planDirName);
 
@@ -476,6 +810,13 @@ function main() {
   checkConsolidatedFiles();
   checkChangeManifest(stateContent, currentState);
   checkComplexityBudget(planContent, currentState);
+
+  // New checks
+  checkAuditContentQuality(planDirName);
+  checkCrossFileConsistency(planDirName);
+  checkDependencyEnforcement(planContent);
+  checkMomentumOscillation(stateContent);
+  checkLessonsHealth(planDirName, currentState);
 
   printResults(planDirName, currentState, iteration, step);
   process.exit(errorCount > 0 ? 1 : 0);
@@ -515,6 +856,8 @@ function printResults(planDirName, currentState, iteration, step) {
   }
 
   console.log();
+  const statusLine = errorCount === 0 ? "HEALTHY" : "UNHEALTHY";
+  console.log(`Status: ${statusLine}`);
   console.log(`Summary: ${passCount} PASS, ${warnCount} WARN, ${errorCount} ERROR`);
 }
 
