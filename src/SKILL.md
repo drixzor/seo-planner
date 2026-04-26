@@ -20,7 +20,7 @@ Write to disk immediately. The context window will rot. The files won't.
 
 ## SCORE Framework (embedded throughout)
 
-Every SEO sprint follows the SCORE framework (credit: Flavio Amiel @fba):
+Every SEO sprint follows the SCORE framework:
 
 | Phase | Description | Maps To |
 |-------|-------------|---------|

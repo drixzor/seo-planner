@@ -83,7 +83,7 @@ Create definitive statistics roundup pages that become the go-to reference for j
 
 Create resources that are so useful that they naturally attract links. This is the scalable approach.
 
-### The Flavio Method: Build What People Link To
+### Build What People Link To
 
 **Step 1: Analyze what gets linked in your niche**
 - Use Ahrefs Content Explorer: search your topic, sort by referring domains
