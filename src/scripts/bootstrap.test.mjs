@@ -867,3 +867,146 @@ describe("help and usage", () => {
     assert.ok(stderr.includes("Unknown flag") || stderr.includes("ERROR"), "Should error on unknown flag");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Tests: v1.2 STRATEGIZE phase (strategy.md + migrate-v12)
+// ---------------------------------------------------------------------------
+
+describe("v1.2 strategy.md", () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = makeTempDir();
+  });
+
+  afterEach(() => {
+    cleanTempDir(tmpDir);
+  });
+
+  it("cmdNew creates strategy.md with all 8 required sections", () => {
+    const planDirName = createActivePlan(tmpDir, "v1.2 strategy test");
+    const content = readPlanFile(tmpDir, planDirName, "strategy.md");
+    assert.ok(content, "strategy.md should exist");
+    const requiredSections = [
+      "Wedge Thesis",
+      "SCORE Assessment",
+      "Adversarial Competitor Synthesis",
+      "Moat Analysis",
+      "Programmatic Volume Decision",
+      "KD Gating Decision",
+      "Channel Bets",
+      "Strategy Gates",
+    ];
+    for (const section of requiredSections) {
+      assert.ok(content.includes(section), `strategy.md should have section: ${section}`);
+    }
+  });
+
+  it("cmdNew strategy.md stub includes Strategy Gates table with PENDING placeholder", () => {
+    const planDirName = createActivePlan(tmpDir, "Strategy Gates table test");
+    const content = readPlanFile(tmpDir, planDirName, "strategy.md");
+    assert.ok(content.includes("| Gate ID |"), "Should have Gate ID column header");
+    assert.ok(content.includes("PENDING"), "Should have PENDING placeholder");
+  });
+
+  it("cmdResume shows strategy.md in recovery files when present", () => {
+    createActivePlan(tmpDir, "Resume strategy test");
+    const output = run(tmpDir, "resume");
+    assert.ok(output.includes("strategy.md"), "Resume should mention strategy.md");
+    assert.ok(!output.includes("missing — v1.1"), "Should not show migrate-v12 hint when strategy.md exists");
+  });
+
+  it("cmdResume shows migrate-v12 hint when strategy.md missing (v1.1 sprint)", () => {
+    const planDirName = createActivePlan(tmpDir, "v1.1 sprint simulation");
+    // Simulate v1.1 sprint by deleting strategy.md
+    rmSync(join(tmpDir, "plans", planDirName, "strategy.md"));
+    const output = run(tmpDir, "resume");
+    assert.ok(output.includes("migrate-v12"), "Should suggest running migrate-v12");
+  });
+});
+
+describe("v1.2 migrate-v12 subcommand", () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = makeTempDir();
+  });
+
+  afterEach(() => {
+    cleanTempDir(tmpDir);
+  });
+
+  it("creates strategy.md stub from v1.1 plan.md (uses pointer)", () => {
+    const planDirName = createActivePlan(tmpDir, "Migrate test goal");
+    rmSync(join(tmpDir, "plans", planDirName, "strategy.md"));
+    const output = run(tmpDir, "migrate-v12");
+    assert.ok(output.includes("Migrated to v1.2"), "Should report migration");
+    const content = readPlanFile(tmpDir, planDirName, "strategy.md");
+    assert.ok(content, "strategy.md should be created");
+    assert.ok(content.includes("MIGRATED from v1.1"), "Should mark as migrated");
+    assert.ok(content.includes("[TODO]"), "Should mark sections needing manual completion");
+  });
+
+  it("accepts explicit dir path argument", () => {
+    const planDirName = createActivePlan(tmpDir, "Explicit path migrate test");
+    rmSync(join(tmpDir, "plans", planDirName, "strategy.md"));
+    // Remove pointer to test path-arg path
+    rmSync(join(tmpDir, "plans", ".current_plan"));
+    const output = run(tmpDir, "migrate-v12", `plans/${planDirName}`);
+    assert.ok(output.includes("Migrated to v1.2"), "Should accept explicit dir path");
+    const content = readPlanFile(tmpDir, planDirName, "strategy.md");
+    assert.ok(content, "strategy.md should be created");
+  });
+
+  it("refuses to overwrite existing strategy.md", () => {
+    createActivePlan(tmpDir, "No overwrite test");
+    // strategy.md already exists from cmdNew; migrate-v12 should refuse
+    const output = run(tmpDir, "migrate-v12");
+    assert.ok(
+      output.includes("already exists") || output.includes("nothing to migrate"),
+      "Should refuse to overwrite"
+    );
+  });
+
+  it("errors when no active sprint and no path supplied", () => {
+    const { stderr } = runExpectFail(tmpDir, "migrate-v12");
+    assert.ok(
+      stderr.includes("No active sprint") || stderr.includes("ERROR"),
+      "Should error with no active sprint and no path"
+    );
+  });
+
+  it("errors when path does not exist", () => {
+    const { stderr } = runExpectFail(tmpDir, "migrate-v12", "plans/nonexistent_sprint");
+    assert.ok(
+      stderr.includes("No sprint directory") || stderr.includes("ERROR"),
+      "Should error on missing path"
+    );
+  });
+});
+
+describe("v1.2 adversarial competitors.md template", () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = makeTempDir();
+  });
+
+  afterEach(() => {
+    cleanTempDir(tmpDir);
+  });
+
+  it("competitors.md template references adversarial methodology", () => {
+    const planDirName = createActivePlan(tmpDir, "Adversarial template test");
+    const content = readFileSync(
+      join(tmpDir, "plans", planDirName, "audit", "competitors.md"),
+      "utf-8"
+    );
+    assert.ok(content.includes("Adversarial") || content.includes("adversarial"), "Should mention adversarial");
+    assert.ok(content.includes("competitive-intelligence.md"), "Should reference the methodology doc");
+    assert.ok(
+      content.includes("confirmed") && content.includes("inferred") && content.includes("estimated"),
+      "Should mention evidence tier labels"
+    );
+  });
+});
