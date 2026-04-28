@@ -116,19 +116,28 @@ function sectionHasContent(content, heading) {
 // Valid state transitions from SKILL.md
 // ---------------------------------------------------------------------------
 
-const VALID_STATES = new Set(["AUDIT", "PLAN", "EXECUTE", "MEASURE", "PIVOT", "CLOSE"]);
+const VALID_STATES = new Set(["AUDIT", "STRATEGIZE", "PLAN", "EXECUTE", "MEASURE", "PIVOT", "CLOSE"]);
 
 const VALID_TRANSITIONS = new Set([
   "INIT->AUDIT",
+  // v1.2 transitions (preferred)
+  "AUDIT->STRATEGIZE",
+  "STRATEGIZE->AUDIT",
+  "STRATEGIZE->STRATEGIZE",
+  "STRATEGIZE->PLAN",
+  "PLAN->STRATEGIZE",
+  "PIVOT->STRATEGIZE",
+  // v1.1 transitions (kept for backward compat with sprints predating v1.2)
   "AUDIT->PLAN",
   "PLAN->AUDIT",
+  "PIVOT->PLAN",
+  // Unchanged in v1.2
   "PLAN->PLAN",
   "PLAN->EXECUTE",
   "EXECUTE->MEASURE",
   "MEASURE->CLOSE",
   "MEASURE->PIVOT",
   "MEASURE->AUDIT",
-  "PIVOT->PLAN",
 ]);
 
 function isValidTransition(from, to) {
@@ -305,9 +314,66 @@ function checkPlanSections(planContent) {
   }
 }
 
+function checkStrategyFile(planDirName, currentState) {
+  if (!currentState) return;
+  const statesRequiringStrategy = new Set(["STRATEGIZE", "PLAN", "EXECUTE", "MEASURE", "PIVOT", "CLOSE"]);
+  if (!statesRequiringStrategy.has(currentState)) return;
+
+  const strategyPath = join(plansDir, planDirName, "strategy.md");
+  if (!existsSync(strategyPath)) {
+    if (currentState === "STRATEGIZE") {
+      error(`strategy.md missing (required in STRATEGIZE state — strategist's only output)`);
+    } else {
+      warn(`strategy.md missing in state ${currentState} — likely a v1.1 sprint. Run \`bootstrap.mjs migrate-v12\` to backfill before resuming.`);
+    }
+    return;
+  }
+
+  const strategyContent = readFile(strategyPath);
+  if (!strategyContent) {
+    error("strategy.md is empty or unreadable");
+    return;
+  }
+
+  // Check for required strategy.md sections (v1.2)
+  const requiredSections = [
+    "Wedge Thesis",
+    "SCORE Assessment",
+    "Adversarial Competitor Synthesis",
+    "Moat Analysis",
+    "Programmatic Volume Decision",
+    "KD Gating Decision",
+    "Channel Bets",
+    "Strategy Gates",
+  ];
+
+  const missing = [];
+  for (const section of requiredSections) {
+    // Match either H2 heading or numbered H2 (e.g., "## 1. Wedge Thesis")
+    const re = new RegExp(`^## (?:\\d+\\.\\s+)?${section.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\b`, "m");
+    if (!re.test(strategyContent)) missing.push(section);
+  }
+
+  if (missing.length === 0) {
+    pass("strategy.md has all 8 required sections");
+  } else if (currentState === "STRATEGIZE") {
+    error(`strategy.md missing required sections: ${missing.join(", ")}`);
+  } else {
+    warn(`strategy.md missing sections (likely migrated stub): ${missing.join(", ")}`);
+  }
+
+  // Check for at least one binding Strategy Gate (states post-STRATEGIZE)
+  if (currentState !== "STRATEGIZE") {
+    const hasBindingGate = /\bMandated action[^|]*\|[^|]*PIVOT\b/i.test(strategyContent) || /\| PIVOT \|/i.test(strategyContent);
+    if (!hasBindingGate) {
+      warn("strategy.md has no Strategy Gate row with Mandated action: PIVOT (binding gate). Strategy without binding gates is unfalsifiable.");
+    }
+  }
+}
+
 function checkFindingsCount(planDirName, currentState) {
   if (!currentState) return;
-  const statesRequiringFindings = new Set(["PLAN", "EXECUTE", "MEASURE", "PIVOT", "CLOSE"]);
+  const statesRequiringFindings = new Set(["STRATEGIZE", "PLAN", "EXECUTE", "MEASURE", "PIVOT", "CLOSE"]);
   if (!statesRequiringFindings.has(currentState)) return;
 
   const findingsContent = readFile(join(plansDir, planDirName, "findings.md"));
@@ -802,6 +868,7 @@ function main() {
     : { state: null, iteration: null, step: "N/A" };
 
   checkStateTransitions(stateContent);
+  checkStrategyFile(planDirName, currentState);
   checkPlanSections(planContent);
   checkFindingsCount(planDirName, currentState);
   checkProgressStructure(planDirName);
