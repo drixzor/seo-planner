@@ -9,6 +9,7 @@
 //   node bootstrap.mjs status                  One-line state summary
 //   node bootstrap.mjs close                   Close active sprint (preserves directory)
 //   node bootstrap.mjs list                    Show all sprint directories (active and closed)
+//   node bootstrap.mjs migrate-v12 [dir]       Backfill strategy.md stub for v1.1 sprint (uses current pointer if [dir] omitted)
 //
 // Creates plans/plan_YYYY-MM-DD_XXXXXXXX/ (date + 8-char hex seed) in cwd.
 // Writes plans/.current_plan with the directory name for discovery.
@@ -424,7 +425,9 @@ ${goal}
 
     writeFileSync(join(planDir, "audit", "backlinks.md"), `# Backlink Audit\n*Run during AUDIT state.*\n\n## Current Profile\n*Domain Rating, referring domains, backlink count*\n\n## Link Quality\n*DR distribution, follow/nofollow ratio, anchor text*\n\n## Toxic Links\n*Spammy referring domains*\n\n## Competitor Comparison\n*Our profile vs top 3 competitors*\n\n## Link Gap\n*Sites linking to competitors but not us*\n\n## Opportunities\n*Low-hanging fruit for link acquisition*\n\n## Issues Found\n| # | Issue | Severity | Impact | Fix Effort |\n|---|-------|----------|--------|------------|\n`);
 
-    writeFileSync(join(planDir, "audit", "competitors.md"), `# Competitor Analysis\n*Run during AUDIT state. Analyze top 3-5 competitors.*\n\n## Competitors Identified\n| # | Domain | DR | Traffic | Top Keywords |\n|---|--------|----|---------|--------------|\n\n## Content Strategy Comparison\n*What they publish, how often, what topics*\n\n## Technical Comparison\n*Site speed, mobile, schema, architecture*\n\n## Backlink Comparison\n*Their link profile vs ours*\n\n## Content Gaps (We're Missing)\n*Topics they rank for that we don't cover*\n\n## Our Advantages\n*Where we're stronger*\n\n## Key Takeaways\n*Actionable insights from competitor analysis*\n`);
+    writeFileSync(join(planDir, "audit", "competitors.md"), `# Competitor Analysis\n*Run during AUDIT state. Adversarial 8-item checklist per competitor with evidence tier labels (confirmed/inferred/estimated). See references/competitive-intelligence.md for methodology.*\n\n## Competitors Identified\n| # | Domain | DR | Traffic | Top Keywords |\n|---|--------|----|---------|--------------|\n\n## Per-Competitor Adversarial Audit\n*For each top-3 competitor, run all 8 checks (sitemap classification, traffic-per-page, dead-page detection, failed templates, anchor profile, SERP feature ownership, moat quantification, what-we-have-they-don't). Every numeric claim gets confirmed/inferred/estimated label.*\n\n## Synthesis\n*The wedge, no-compete moats, niche-fail patterns, our exploitable advantages, replicable wins. Strategist (in STRATEGIZE phase) reads this section directly.*\n`);
+
+    writeFileSync(join(planDir, "strategy.md"), `# SEO Strategy\n*Authored by seo-strategist during STRATEGIZE phase. Every claim cites an audit finding. No template fallback.*\n\n## 1. Wedge Thesis\n*One paragraph, three sentences max. Where in this niche we attack, why now, why us. Cite findings.*\n\n## 2. SCORE Assessment\n| Dimension | Score (1-10) | Key Evidence (cited) |\n|-----------|-------------|----------------------|\n| **S**ite Optimization | | |\n| **C**ontent Production | | |\n| **O**utside Signals | | |\n| **R**ank Enhancement | | |\n| **E**valuate Results | | |\n| **Total** | /50 | |\n\n## 3. Adversarial Competitor Synthesis\n*Per-competitor paragraph: their moat, weakness, failed templates, relevance to our wedge.*\n\n## 4. Moat Analysis\n*Theirs (with time-to-match) and ours (top 5 unfair advantages with replication time).*\n\n## 5. Programmatic Volume Decision\n*Choose exactly one: Decision A: Zero programmatic | Decision B: Bounded with measurement gate | Decision C: Aggressive with gate. Cite at least one audit finding.*\n\n## 6. KD Gating Decision\n*Per-DR-band keyword difficulty thresholds with rationale.*\n\n## 7. Channel Bets\n| Channel | Bet | Rationale (cite audit finding) |\n|---------|-----|-------------------------------|\n| Programmatic content | commit / bounded / ignore | |\n| Editorial content (depth) | commit / ignore | |\n| Directory submission | commit / ignore | |\n| Digital PR | commit / ignore | |\n| Partnerships / integrations | commit / ignore | |\n| GBP / local | commit / ignore | |\n| Schema / SERP feature targeting | commit / ignore | |\n\n## 8. Strategy Gates (binding falsification signals)\n*3-7 rows. At least one with Mandated action: PIVOT. The measurer evaluates these and triggers binding state transitions on failure.*\n\n| Gate ID | Signal | Threshold | Measurement window | Status | Mandated action on FAIL |\n|---------|--------|-----------|--------------------|--------|------------------------ |\n| G-1 | | | | PENDING | |\n`);
 
     ensureConsolidatedFiles();
 
@@ -488,6 +491,8 @@ function cmdResume() {
   console.log();
   console.log(`  Recovery files:`);
   console.log(`    state.md       → plans/${planDirName}/state.md`);
+  const strategyExists = existsSync(join(plansDir, planDirName, "strategy.md"));
+  console.log(`    strategy.md    → plans/${planDirName}/strategy.md${strategyExists ? "" : " (missing — v1.1 sprint? run `migrate-v12` to backfill)"}`);
   console.log(`    plan.md        → plans/${planDirName}/plan.md`);
   console.log(`    decisions.md   → plans/${planDirName}/decisions.md`);
   console.log(`    progress.md    → plans/${planDirName}/progress.md`);
@@ -564,6 +569,108 @@ function cmdClose(opts = {}) {
   }
 }
 
+function cmdMigrateV12(targetPath) {
+  // Resolve target sprint directory
+  let planDirName;
+  if (targetPath) {
+    // Strip "plans/" prefix if present
+    const cleaned = targetPath.replace(/^plans\//, "").replace(/\/$/, "");
+    if (!existsSync(join(plansDir, cleaned))) {
+      console.error(`ERROR: No sprint directory at plans/${cleaned}/`);
+      process.exit(1);
+    }
+    planDirName = cleaned;
+  } else {
+    planDirName = readPointer();
+    if (!planDirName) {
+      console.error("ERROR: No active sprint and no path supplied. Usage: migrate-v12 [path]");
+      process.exit(1);
+    }
+  }
+
+  const planDir = join(plansDir, planDirName);
+  const strategyPath = join(planDir, "strategy.md");
+
+  if (existsSync(strategyPath)) {
+    console.log(`strategy.md already exists at plans/${planDirName}/strategy.md — nothing to migrate.`);
+    process.exit(0);
+  }
+
+  const planContent = readPlanFile(planDirName, "plan.md");
+  if (!planContent) {
+    console.error(`ERROR: plans/${planDirName}/plan.md not found. Cannot migrate without v1.1 plan.md.`);
+    process.exit(1);
+  }
+
+  // Extract relevant sections from v1.1 plan.md
+  function section(name) {
+    const re = new RegExp(`\\n## ${name}\\s*\\n([\\s\\S]+?)(?=\\n## |$)`);
+    const m = planContent.match(re);
+    return m ? m[1].trim() : null;
+  }
+
+  const currentState = section("Current State Assessment");
+  const targetState = section("Target State");
+  const topicalMap = section("Topical Map");
+  const backlinkStrategy = section("Backlink Strategy");
+  const preMortem = section("Pre-Mortem & Falsification Signals");
+
+  // Build strategy.md from extracted sections + TODOs for missing pieces
+  const missingNotes = [];
+  if (!currentState) missingNotes.push("SCORE Assessment (could not extract — fill in manually from audit/technical.md)");
+  if (!topicalMap) missingNotes.push("Wedge Thesis (no Topical Map found in v1.1 plan — derive from audit/competitors.md)");
+  if (!preMortem) missingNotes.push("Strategy Gates (no Pre-Mortem section in v1.1 plan — author 3-7 binding gates from scratch)");
+
+  let strategyContent = `# SEO Strategy
+*MIGRATED from v1.1 sprint plans/${planDirName}/plan.md on ${new Date().toISOString().slice(0, 10)}.*
+*This is a STUB. Sections marked [TODO] need manual completion before resuming the sprint at STRATEGIZE phase.*
+${missingNotes.length > 0 ? "\n*Could not auto-extract: " + missingNotes.join("; ") + ".*\n" : ""}
+
+## 1. Wedge Thesis
+[TODO] One paragraph, three sentences max. Where in this niche we attack, why now, why us. Cite findings from audit/.
+
+${topicalMap ? `*Migration hint — v1.1 topical map (use as input to wedge derivation):*\n\`\`\`\n${topicalMap}\n\`\`\`\n` : ""}
+## 2. SCORE Assessment
+${currentState ? `*Migrated from v1.1 plan.md → Current State Assessment. Verify scores match audit findings.*\n\n${currentState}\n` : "[TODO] Score 1-10 per dimension with cited audit evidence.\n"}
+
+## 3. Adversarial Competitor Synthesis
+[TODO] Per-competitor paragraph from audit/competitors.md. v1.2 expects evidence tier labels (confirmed/inferred/estimated) — if your audit doesn't have them, run a fresh adversarial competitor audit before completing this section.
+
+## 4. Moat Analysis
+[TODO] Theirs (with time-to-match) and ours (top 5 unfair advantages with replication time). See references/competitive-intelligence.md §8.
+
+## 5. Programmatic Volume Decision
+[TODO] Choose exactly one: Decision A: Zero programmatic | Decision B: Bounded with gate | Decision C: Aggressive with gate. Cite audit finding.
+
+${targetState ? `*Migration hint — v1.1 target state (may inform programmatic volume reasoning):*\n\`\`\`\n${targetState}\n\`\`\`\n` : ""}
+## 6. KD Gating Decision
+[TODO] Per-DR-band keyword difficulty thresholds with rationale.
+
+## 7. Channel Bets
+[TODO] Commit / ignore decisions per channel with rationale citing audit findings.
+
+${backlinkStrategy ? `*Migration hint — v1.1 backlink strategy (informs channel bets):*\n\`\`\`\n${backlinkStrategy}\n\`\`\`\n` : ""}
+## 8. Strategy Gates (binding falsification signals)
+[TODO] 3-7 rows. At least one with Mandated action: PIVOT.
+
+${preMortem ? `*Migration hint — v1.1 STOP IF prose (translate each into a structured gate row):*\n\`\`\`\n${preMortem}\n\`\`\`\n` : ""}
+| Gate ID | Signal | Threshold | Measurement window | Status | Mandated action on FAIL |
+|---------|--------|-----------|--------------------|--------|------------------------ |
+| G-1 | | | | PENDING | |
+`;
+
+  writeFileSync(strategyPath, strategyContent);
+
+  console.log(`Migrated to v1.2: plans/${planDirName}/strategy.md`);
+  console.log(`  Source:  plans/${planDirName}/plan.md (v1.1 sprint)`);
+  console.log(`  Status:  STUB — sections marked [TODO] need manual completion`);
+  if (missingNotes.length > 0) {
+    console.log(`  Could not auto-extract:`);
+    for (const note of missingNotes) console.log(`    - ${note}`);
+  }
+  console.log(`  Next:    Open strategy.md, complete [TODO] sections, then resume at STRATEGIZE phase.`);
+}
+
 function cmdList() {
   if (!existsSync(plansDir)) { console.log("No plans/ directory found."); process.exit(0); }
   const activeName = readPointer();
@@ -593,9 +700,11 @@ Commands:
   status                  One-line sprint status
   close                   Close active sprint (preserves data)
   list                    Show all sprints
+  migrate-v12 [path]      Backfill strategy.md stub for v1.1 sprint (uses current pointer if path omitted)
 
 Example:
-  node bootstrap.mjs new "Optimize acme.com for SaaS keywords — target 50K organic visits/mo"`);
+  node bootstrap.mjs new "Optimize acme.com for SaaS keywords — target 50K organic visits/mo"
+  node bootstrap.mjs migrate-v12 plans/plan_2026-04-26_abc123ef`);
 }
 
 // ---------------------------------------------------------------------------
@@ -603,7 +712,7 @@ Example:
 // ---------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
-const subcommands = new Set(["new", "resume", "status", "close", "list", "help"]);
+const subcommands = new Set(["new", "resume", "status", "close", "list", "migrate-v12", "help"]);
 if (args.length === 0) { printUsage(); process.exit(0); }
 const cmd = args[0];
 function looksLikeGoal(text) {
@@ -628,4 +737,5 @@ if (!subcommands.has(cmd)) {
 else if (cmd === "status") { cmdStatus(); }
 else if (cmd === "close") { cmdClose(); }
 else if (cmd === "list") { cmdList(); }
+else if (cmd === "migrate-v12") { cmdMigrateV12(args[1]); }
 else if (cmd === "help") { printUsage(); }
