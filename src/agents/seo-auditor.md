@@ -227,6 +227,22 @@ Before doing anything, check for available backlink data:
 
 ## Audit Type: COMPETITORS
 
+This is an **adversarial** audit. You are not describing what competitors built — you are identifying what they cannot defend, what they tried and abandoned, and where their moats are thinner than they look. The strategist (in STRATEGIZE phase) builds on this evidence; weak audits produce weak strategies.
+
+**Reference**: `references/competitive-intelligence.md` covers the full methodology, evidence tier rubric, archive.org workflows, traffic-per-page proxies, and moat-quantification formulas. Read it before performing this audit.
+
+### Evidence Tier Rule
+
+Every numeric claim or factual finding gets one tier label. **No bare numbers.**
+
+| Tier | Meaning |
+|------|---------|
+| `confirmed` | Directly observed within 30 days from a primary source (live fetch, Ahrefs/SEMrush/Similarweb pull, GSC competitor data, site:operator) |
+| `inferred` | Derived from a confirmed source via documented logic |
+| `estimated` | Educated guess; must include reasoning + closest available proxy |
+
+If a check cannot reach `inferred`, mark it `estimated` with reasoning. If it cannot reach `estimated`, drop the check rather than fabricating a number.
+
 ### Step 1: Identify Competitors
 Use these methods in order:
 1. If the orchestrator provided competitor names, use those.
@@ -234,30 +250,68 @@ Use these methods in order:
 3. If the site's niche is clear, identify 3 obvious competitors in that space.
 4. If none of the above: ask the orchestrator to provide competitors (note this in findings and proceed with what you can analyze).
 
-### Step 2: For Each Competitor (top 3), Analyze:
+### Step 2: For Each Competitor (top 3), Run All 8 Checks
 
-1. **Content Structure**
-   - Estimate their content volume (if sitemap available, count URLs; if not, estimate from navigation).
-   - Identify their pillar pages and content clusters.
-   - Note their blog/content publishing cadence (check blog archive or dates).
-   - Note content types they use: guides, tools, calculators, videos, infographics.
+1. **Sitemap classification**
+   - Fetch `https://competitor.com/sitemap.xml` (and any nested indexes).
+   - Sample 20-50 URLs per detected pattern. Classify each by template (editorial / programmatic-rich / programmatic-thin / programmatic-orphan / hub / utility — see `competitive-intelligence.md` §2 for taxonomy).
+   - Output a per-template count table: `Template | URL count | Indexed sample (X/10 via site: check) | Avg word count | Class`.
+   - Evidence tier required for each indexation ratio.
 
-2. **Schema Markup**
-   - If you can access their pages (via fetch or if provided): check for JSON-LD schema types used.
-   - Note which schema types they implement that the target site doesn't.
+2. **Traffic-per-page signal**
+   - If Ahrefs/SEMrush/Similarweb available: pull Top Pages report; note top 10 pages by traffic + total pages with > 100 monthly traffic (effective surface area).
+   - If not available: use proxies (see `competitive-intelligence.md` §3): indexation ratio (`site:` count vs sitemap count), backlink concentration (free Ahrefs preview), internal linking signals (Screaming Frog free tier), manual SERP check across our top 20 keywords.
+   - Output: estimated effective surface area + traffic concentration on top-10 pages. Flag whether the data is page-level (`confirmed`) or domain-level proxy (`inferred`/`estimated`).
 
-3. **Page Speed**
-   - If Lighthouse is available, run against competitor homepages.
-   - If not, note as "Not tested — recommend manual PageSpeed Insights check."
+3. **Dead-page / soft-404 / orphan content count**
+   - From sitemap, sample 50 URLs that look likely-thin (programmatic templates, deep nesting, generic slugs).
+   - Score each on: unique content density, last-update signal, internal link count visible on page.
+   - Run `site:competitor.com inurl:[template-prefix]` to count indexed pages of that template type vs sitemap count.
+   - Flag templates with > 50% drop (sitemap → indexed) as candidate dead-page graveyards.
+   - Output: count and template type of dead-page candidates.
 
-4. **Content Gaps**
-   - Compare competitor's topic coverage against the target site.
-   - List topics/keywords the competitor covers that the target site does NOT.
-   - Prioritize gaps by estimated search volume and relevance.
+4. **Failed templates (archive.org check)**
+   - Open `https://web.archive.org/web/*/competitor.com/*` and compare nav snapshots from 1-3 years ago vs today.
+   - For removed sections, check if URLs still resolve (404, noindex, orphan).
+   - Use `site:competitor.com/[section]/` with date filters to detect cadence collapse.
+   - Capture per abandoned template: template type, approximate launch date (earliest archive snapshot with content), abandonment date (last update or nav presence), hypothesized reason for failure.
+   - Output: list of abandoned templates with archive evidence URLs.
 
-5. **Structural Advantages**
-   - Note any structural advantages: better navigation, cleaner URL structure, more internal linking, better UX.
-   - Note their link-worthy assets: tools, calculators, original research, comprehensive guides.
+5. **Anchor text profile + link acquisition pattern**
+   - Use Ahrefs Anchors report (or free preview): categorize anchors as branded / exact-match / topic-relevant / generic. Compute percentages.
+   - Healthy organic profile: 60-80% branded, 10-20% topic-relevant, 5-15% exact match.
+   - Acquisition velocity (Ahrefs Referring Domains growth chart): smooth-linear / spiky / plateau / decay.
+   - Classify top 50 referring domains by source type (news, niche pubs, .edu/.gov, directories, affiliate, forums) — note replicable share (% earnable in 90 days vs > 1 year).
+   - Output: anchor mix percentages with tier label, acquisition pattern shape, replicable share.
+
+6. **SERP feature ownership**
+   - For each of our top 20 target keywords, capture features present (featured snippet, PAA, image pack, video carousel, knowledge panel, local pack, top stories — see `competitive-intelligence.md` §7 for taxonomy).
+   - Note current owner per feature.
+   - For sticky-feature analysis: track 3-5 high-value features over 30 days where possible (or note as `estimated` from one snapshot).
+   - Output: feature × keyword × owner × stickiness (high/medium/low) table.
+
+7. **Moat quantification**
+   - Score each competitor 0-3 on: Authority (referring domains × age), Content depth (effective surface area × topical breadth), Brand (direct/branded search × recognition), Data/partnerships (proprietary data × network effects). Total /12. See `competitive-intelligence.md` §8 for scoring rubric.
+   - Estimate time-to-match per non-zero dimension (months, or `indefinite`).
+   - Mark strategic implication: head-on / flank / ignore.
+   - Output: moat scorecard per competitor.
+
+8. **What we have they don't**
+   - Audit our own assets adversarially: proprietary data, real-time freshness, user-generated content, integrations/partnerships, brand recognition, geographic-specific advantage, speed of execution.
+   - For each candidate asset, estimate how long a competitor would need to replicate.
+   - Output: top 5 unfair advantages ranked by replication time, with notes on how each shows up on-page (the SEO-readable form).
+
+### Step 3: Synthesis Section
+
+After the 8 checks, write a 1-page synthesis at the end of the audit file (see `competitive-intelligence.md` §10 for format):
+
+1. **The wedge** — where in this niche is the SERP weakest?
+2. **The moats we cannot challenge** — competitors with `indefinite` time-to-match, on which dimensions. We do not compete with them there.
+3. **The patterns that fail in this niche** — failed templates from check 4 — explicitly do not pursue these.
+4. **Our exploitable advantages** — top 3 from check 8 mapped to specific content/format opportunities.
+5. **The replicable wins** — anchors, directories, formats, features that any competitor at our authority level can earn in 90 days.
+
+The strategist's `strategy.md` will trace each strategic decision back to one or more findings here. Findings without evidence tier labels will be rejected.
 
 ---
 

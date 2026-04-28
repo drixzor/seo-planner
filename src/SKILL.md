@@ -2,9 +2,13 @@
 name: seo-planner
 description: >
   State-machine driven iterative SEO planning and execution for websites.
-  Cycle: Audit → Plan → Execute → Measure → Close (with Pivot loops).
-  Filesystem as persistent memory. Clone into any website repo and run.
-  Designed around 90-day sprint methodology and the SCORE framework.
+  Cycle: Audit → Strategize → Plan → Execute → Measure → Close
+  (with Pivot loops that re-enter Strategize so strategy is re-derived
+  from new evidence). Adversarial competitor audits feed evidence-bound
+  strategy; Strategy Gates authored in strategize.md become binding
+  falsification signals enforced by the measurer. Filesystem as
+  persistent memory. Clone into any website repo and run. Designed
+  around 90-day sprint methodology and the SCORE framework.
 ---
 
 # SEO Planner
@@ -35,40 +39,47 @@ Every SEO sprint follows the SCORE framework:
 ```mermaid
 stateDiagram-v2
     [*] --> AUDIT
-    AUDIT --> PLAN : comprehensive audit complete
-    PLAN --> AUDIT : need more data
-    PLAN --> PLAN : strategy rejected / revise
-    PLAN --> EXECUTE : strategy approved
+    AUDIT --> STRATEGIZE : adversarial audit complete
+    STRATEGIZE --> AUDIT : audit evidence insufficient
+    STRATEGIZE --> STRATEGIZE : strategy rejected / revise
+    STRATEGIZE --> PLAN : strategy approved
+    PLAN --> STRATEGIZE : user contests strategy
+    PLAN --> PLAN : tactical revision
+    PLAN --> EXECUTE : plan approved
     EXECUTE --> MEASURE : implementation phase ends
     MEASURE --> CLOSE : sprint goals met
-    MEASURE --> PIVOT : results below threshold / better approach
+    MEASURE --> PIVOT : binding gate FAIL or user choice
     MEASURE --> AUDIT : need deeper investigation
-    PIVOT --> PLAN : new strategy ready
+    PIVOT --> STRATEGIZE : strategy re-derived from new evidence
     CLOSE --> [*]
 ```
 
 | State | Purpose | Allowed Actions |
 |-------|---------|-----------------|
-| AUDIT | Comprehensive SEO audit | Read-only on website/codebase. Write only to `{plan-dir}`. Run analysis tools. |
-| PLAN | Design SEO strategy | Write plan.md. NO implementation changes. Content architecture design only. |
+| AUDIT | Comprehensive SEO audit (adversarial competitor analysis is load-bearing) | Read-only on website/codebase. Write only to `{plan-dir}`. Run analysis tools. |
+| STRATEGIZE | Derive evidence-bound wedge thesis, programmatic volume decision, and binding Strategy Gates | Write `strategy.md` only. Read audits + LESSONS + DECISIONS. NO plan.md, NO implementation. |
+| PLAN | Translate strategy into executable tactics | Write plan.md + verification.md (with Strategy Gates copied verbatim). NO strategic claims, NO implementation. |
 | EXECUTE | Implement SEO changes | Edit files, create content, fix technical issues, add schema, build internal links. |
-| MEASURE | Track & evaluate results | Read analytics, run audits, compare baselines. Update verification.md, decisions.md. |
-| PIVOT | Revise strategy based on data | Log pivot in decisions.md. Do NOT write plan.md yet. |
+| MEASURE | Track & evaluate results; enforce binding Strategy Gates | Read analytics, run audits, compare baselines. Update verification.md, decisions.md. When MANDATED: PIVOT verdict fires, transition without user menu. |
+| PIVOT | Re-derive strategy from new evidence | Log pivot in decisions.md. Routes to STRATEGIZE — strategy is re-authored, not just plan revised. |
 | CLOSE | Finalize sprint | Write summary.md. Audit decisions. Merge findings/decisions to consolidated files. Update LESSONS.md (<=200 lines). |
 
 ### Transitions
 
 | From -> To | Trigger |
 |------------|---------|
-| AUDIT -> PLAN | All 4 audit reports complete (technical.md, content.md, backlinks.md, competitors.md). Baseline metrics recorded. |
-| PLAN -> AUDIT | Insufficient data to form strategy. Missing competitor analysis or keyword data. |
-| PLAN -> PLAN | User rejects strategy. Revise and re-present. |
-| PLAN -> EXECUTE | User explicitly approves strategy. |
+| AUDIT -> STRATEGIZE | All 4 audit reports complete; `audit/competitors.md` is the adversarial 8-item version with evidence tier labels. Baseline metrics recorded. |
+| STRATEGIZE -> AUDIT | Audit evidence insufficient (e.g., < 3 evidence-tier-labeled findings per competitor). Strategy on weak audit is rejected. |
+| STRATEGIZE -> STRATEGIZE | User rejects strategy. Revise and re-present. |
+| STRATEGIZE -> PLAN | User explicitly approves strategy. `strategy.md` has all 8 sections including ≥1 binding Strategy Gate. |
+| PLAN -> STRATEGIZE | User feedback during plan review challenges strategy (not tactics). Route back to re-strategize, do not loop in PLAN. |
+| PLAN -> PLAN | Tactical revision (re-order steps, adjust calendar) without strategy change. |
+| PLAN -> EXECUTE | User explicitly approves plan. Plan sections cite strategy.md; verification.md has Strategy Gates copied verbatim. |
 | EXECUTE -> MEASURE | Implementation phase ends (all steps done, failure, surprise, or leash hit). |
-| MEASURE -> CLOSE | Sprint goals met or exceeded. All KPIs verified. **User confirms.** |
-| MEASURE -> PIVOT | Results below threshold after adequate measurement window. |
+| MEASURE -> CLOSE | Sprint goals met or exceeded. All KPIs verified. No binding gate fail. **User confirms.** |
+| MEASURE -> PIVOT | (a) Binding Strategy Gate FAIL with `Mandated action: PIVOT` (automatic, no menu); or (b) user choice from menu when no binding gate triggered. |
 | MEASURE -> AUDIT | Unexpected findings need deeper investigation (algorithm update, competitor shift). |
-| PIVOT -> PLAN | New strategy formulated. Decision logged with data justification. |
+| PIVOT -> STRATEGIZE | New evidence requires re-derived strategy. Strategy is re-authored from updated audit + measurement evidence. PIVOT does NOT route directly to PLAN. |
 
 > **Bootstrap shortcuts**: `bootstrap.mjs close` allows closing from any state. These are administrative exits — the protocol CLOSE steps (summary.md, decision audit, LESSONS.md update) should be completed by the agent before running `close`.
 
@@ -88,8 +99,10 @@ These files are active working memory. Re-read during the conversation, not just
 | Before any EXECUTE step | `state.md`, `plan.md`, `progress.md` | Confirm step, content manifest, fix attempts, progress sync |
 | Before writing a fix | `decisions.md` | Don't repeat failed approaches. Check 3-strike. |
 | Before modifying SEO-critical code | Referenced `decisions.md` entry | Understand why before changing |
-| Before PLAN or PIVOT | `decisions.md`, `findings.md`, `findings/*`, `audit/*`, `plans/LESSONS.md` | Ground strategy in audit data + institutional memory |
-| Before any MEASURE | `plan.md` (KPIs + verification strategy), `progress.md`, `verification.md`, `findings.md`, `audit/*`, `decisions.md` | Full context before evaluating results |
+| Before STRATEGIZE | `audit/*` (especially competitors.md with evidence tier labels), `plans/LESSONS.md`, `references/competitive-intelligence.md`, `references/scoring-framework.md` | Strategy is bounded by audit quality |
+| Before PLAN | `strategy.md` (binding), `audit/*`, `plans/LESSONS.md`, `decisions.md` | Plan is a translation of strategy, not a re-derivation |
+| Before PIVOT | `strategy.md`, `decisions.md`, `findings.md`, `findings/*`, `audit/*`, `verification.md` (especially failed gates), `plans/LESSONS.md` | Re-strategy must address the falsified claim |
+| Before any MEASURE | `plan.md` (KPIs + verification strategy), `strategy.md` (Strategy Gates are binding signals), `progress.md`, `verification.md`, `findings.md`, `audit/*`, `decisions.md` | Full context before evaluating results |
 | Every 10 tool calls | `state.md` | Reorient. Right step? Scope crept? |
 
 **>50 messages**: re-read `state.md` + `plan.md` before every response. Files are truth, not memory.
@@ -101,10 +114,12 @@ The system saves its own state automatically at every transition. Never wait for
 | When | What to save | Why |
 |------|-------------|-----|
 | Every state transition | `state.md` (new phase, timestamp, reason), `progress.md` (status update) | State survives context loss |
-| AUDIT→PLAN | `findings.md` (SCORE baseline, audit links, constraints) | Baseline is permanent record |
-| PLAN→EXECUTE | `progress.md` (all steps as Remaining), `decisions.md` (approach + trade-offs) | Execution plan is on disk |
+| AUDIT→STRATEGIZE | `findings.md` (SCORE baseline, audit links, constraints) | Baseline is permanent record |
+| STRATEGIZE→PLAN | `decisions.md` (Programmatic Volume Decision rationale, Channel Bets ignore decisions, Strategy Gate thresholds), `findings.md` (wedge thesis as constraint anchor) | Strategy decisions are auditable |
+| PLAN→EXECUTE | `progress.md` (all steps as Remaining), `decisions.md` (tactical approach + trade-offs); verify `verification.md` Strategy Gates section matches `strategy.md` verbatim | Plan is on disk, gates are wired |
 | After each EXECUTE step | `progress.md` (Remaining→Completed), `state.md` (change manifest) | Every change tracked |
 | EXECUTE→MEASURE | Full change manifest in `state.md`, final `progress.md` | Clean handoff to measurement |
+| MEASURE binding-pivot | Log failed gate ID(s) and 5-Why root cause in `decisions.md`; route to STRATEGIZE without user menu | Binding gate enforcement is the new seam |
 | CLOSE | `summary.md`, `LESSONS.md` (rolling append), run `bootstrap.mjs close` | Lessons carry to next sprint |
 
 **Across conversations**: All state lives in `plans/`. When a new conversation starts, check `plans/.current_plan` — if it exists, read `state.md` and resume. The filesystem is permanent. The context window is temporary.
@@ -149,7 +164,8 @@ plans/
     |   +-- technical.md           # Technical SEO audit (speed, mobile, schema, crawl)
     |   +-- content.md             # Content audit (topical gaps, thin content, cannibalization)
     |   +-- backlinks.md           # Backlink audit (profile, toxic links, opportunities)
-    |   +-- competitors.md         # Competitor analysis (rankings, content, backlinks, gaps)
+    |   +-- competitors.md         # Adversarial competitor audit (8-item checklist, evidence tiers)
+    +-- strategy.md                # STRATEGIZE output: wedge, moat analysis, programmatic volume decision, Strategy Gates
     +-- summary.md                 # Written at CLOSE
 ```
 
@@ -161,39 +177,40 @@ R = read only | W = update (implicit read + write) | R+W = distinct read and wri
 
 **Read-before-write rule**: Always read a plan file before writing/overwriting it — even on the first update after bootstrap. Claude Code's Write tool will reject writes to files you haven't read in the current session.
 
-| File | AUDIT | PLAN | EXECUTE | MEASURE | PIVOT | CLOSE |
-|------|-------|------|---------|---------|-------|-------|
-| state.md | W | W | R+W | W | W | W |
-| plan.md | -- | W | R+W | R | R | R |
-| decisions.md | -- | R+W | R | R+W | R+W | R |
-| findings.md | W | R | -- | R | R+W | R |
-| findings/* | W | R | -- | R | R+W | R |
-| audit/technical.md | W | R | R | R | R | R |
-| audit/content.md | W | R | R | R | R | R |
-| audit/backlinks.md | W | R | R | R | R | R |
-| audit/competitors.md | W | R | R | R | R | R |
-| progress.md | -- | W | R+W | R+W | W | R |
-| verification.md | -- | W | W | W | R | R |
-| checkpoints/* | -- | -- | W | R | R | -- |
-| summary.md | -- | -- | -- | -- | -- | W |
-| plans/FINDINGS.md | R(600) | R(600) | -- | -- | R(600) | W(merge+compress) |
-| plans/DECISIONS.md | R(600) | R(600) | -- | -- | R(600) | W(merge+compress) |
-| plans/LESSONS.md | R | R | -- | -- | R | W(rewrite<=200) |
-| plans/INDEX.md | R | -- | -- | -- | -- | W(append via bootstrap) |
-| lessons_snapshot.md | -- | -- | -- | -- | -- | W(auto via bootstrap) |
+| File | AUDIT | STRATEGIZE | PLAN | EXECUTE | MEASURE | PIVOT | CLOSE |
+|------|-------|------------|------|---------|---------|-------|-------|
+| state.md | W | W | W | R+W | W | W | W |
+| strategy.md | -- | W | R | R | R | R+W | R |
+| plan.md | -- | -- | W | R+W | R | R | R |
+| decisions.md | -- | R+W | R+W | R | R+W | R+W | R |
+| findings.md | W | R+W | R | -- | R | R+W | R |
+| findings/* | W | R | R | -- | R | R+W | R |
+| audit/technical.md | W | R | R | R | R | R | R |
+| audit/content.md | W | R | R | R | R | R | R |
+| audit/backlinks.md | W | R | R | R | R | R | R |
+| audit/competitors.md | W | R | R | R | R | R | R |
+| progress.md | -- | -- | W | R+W | R+W | W | R |
+| verification.md | -- | -- | W | W | W | R | R |
+| checkpoints/* | -- | -- | -- | W | R | R | -- |
+| summary.md | -- | -- | -- | -- | -- | -- | W |
+| plans/FINDINGS.md | R(600) | R(600) | R(600) | -- | -- | R(600) | W(merge+compress) |
+| plans/DECISIONS.md | R(600) | R(600) | R(600) | -- | -- | R(600) | W(merge+compress) |
+| plans/LESSONS.md | R | R | R | -- | -- | R | W(rewrite<=200) |
+| plans/INDEX.md | R | R | -- | -- | -- | -- | W(append via bootstrap) |
+| lessons_snapshot.md | -- | -- | -- | -- | -- | -- | W(auto via bootstrap) |
 
 ## Sub-Agent Architecture
 
-Seven specialized sub-agents, each with a focused responsibility. All sub-agent output goes to `{plan-dir}/findings/` or `{plan-dir}/audit/`. Sub-agents never modify the index files — the main agent updates `findings.md` after sub-agents write.
+Seven specialized sub-agents, each with a focused responsibility. All sub-agent output goes to `{plan-dir}/findings/`, `{plan-dir}/audit/`, or one of the named artifacts (`strategy.md`, `plan.md`, `verification.md`). Sub-agents never modify the index files — the main agent updates `findings.md` after sub-agents write.
 
 | Sub-Agent | Role | Output Location | Used In |
 |-----------|------|-----------------|---------|
-| **seo-auditor** | Runs technical audits (Lighthouse, crawl analysis, schema validation, Core Web Vitals) | `audit/technical.md` | AUDIT |
-| **seo-researcher** | Keyword research, search intent analysis, SERP analysis, competitor gap analysis | `audit/content.md`, `audit/competitors.md`, `findings/` | AUDIT |
-| **seo-planner** | Topical map design, content cluster architecture, editorial calendar, link building strategy | `findings/` | PLAN |
+| **seo-auditor** | Runs technical, content, backlink, and adversarial competitor audits (8-item competitor checklist, evidence tiers, moat quantification) | `audit/{type}.md` | AUDIT |
+| **seo-strategist** | Derives evidence-bound wedge thesis, programmatic volume decision, KD gating, channel bets, and binding Strategy Gates | `strategy.md` | STRATEGIZE |
+| **seo-planner-agent** | Translates strategy into plan.md (topical map, content calendar, technical fixes, internal linking, KPI targets) and creates verification.md template with Strategy Gates copied verbatim | `plan.md`, `verification.md` (template) | PLAN |
 | **seo-executor** | Content creation, technical fixes, schema markup, internal linking implementation | Direct file edits | EXECUTE |
-| **seo-measurer** | Ranking tracking, traffic analysis, indexation monitoring, Core Web Vitals tracking | `findings/`, `verification.md` | MEASURE |
-| **seo-reviewer** | Adversarial review of SEO changes — checks for over-optimization, cannibalization, penalties | `findings/` | MEASURE |
+| **seo-measurer** | Verification checks, root cause analysis, Strategy Gate evaluation with binding `MANDATED: PIVOT` verdict on failure | `verification.md` | MEASURE |
+| **seo-reviewer** | Adversarial review of SEO changes — checks for over-optimization, cannibalization, penalties | `findings/` | MEASURE (sprint 2+) |
 | **seo-archivist** | Compresses findings, updates LESSONS.md, maintains INDEX.md | `plans/` consolidated files | CLOSE |
 
 **Naming convention**: `findings/{topic-slug}.md` (kebab-case, descriptive — e.g. `keyword-gaps.md`, `internal-linking-map.md`, `competitor-backlink-profile.md`).
@@ -251,11 +268,66 @@ The AUDIT state is the foundation. No strategy without data. Every SEO sprint st
 - MEASURE -> AUDIT loops: append to existing findings, don't overwrite. Mark corrections with `[CORRECTED sprint-N]`.
 - **Exploration Confidence** — before transitioning to PLAN, self-assess: technical health [poor/adequate/good], content coverage [sparse/adequate/comprehensive], competitive position [blind/partial/clear], backlink profile [unknown/partial/mapped]. All must be at least "adequate." Any "poor" or "blind" -> keep auditing. Record in the transition log entry in `state.md`.
 
+### STRATEGIZE
+
+The STRATEGIZE state derives evidence-bound strategy from the adversarial audit. **No content calendar, no KPI table, no plan steps**. Strategy is what binds those tactical artifacts in the next phase. Skipping STRATEGIZE collapses the protocol back to v1.1 template-driven planning.
+
+**Gate check**: read `audit/competitors.md` first. Verify it is the adversarial 8-item version with evidence tier labels (`confirmed` / `inferred` / `estimated`) on every numeric claim. If < 3 evidence-tier-labeled findings per competitor → return to AUDIT for re-dispatch with stricter evidence requirements. Strategy on weak audits is rejected.
+
+**Strategy Components** (all required in `strategy.md`):
+
+#### 1. Wedge Thesis
+- One paragraph, three sentences max
+- Where in this niche we attack, why now, why us
+- Every claim cites a specific finding — `(audit/competitors.md §3)` or `(audit/content.md issue #4)`
+
+#### 2. SCORE Assessment
+- Site / Content / Outside / Rank / Evaluate scores 1-10 with cited evidence
+- This is the strategic snapshot, not the tactical detail (that's PLAN's job)
+
+#### 3. Adversarial Competitor Synthesis
+- Per-competitor paragraph: their moat, their weakness, what they got wrong (failed templates), their relevance to our wedge
+
+#### 4. Moat Analysis
+- Theirs: scoring + time-to-match per competitor (mark `indefinite` moats as no-compete dimensions)
+- Ours: top 5 unfair advantages with replication time and on-page form
+
+#### 5. Programmatic Volume Decision (the load-bearing decision)
+Output exactly one of:
+- **Decision A: Zero programmatic** — niche evidence shows programmatic templates fail
+- **Decision B: Bounded programmatic with measurement gates** — first wave N pages of template T, gated on indexation rate
+- **Decision C: Aggressive programmatic** — niche rewards programmatic, match volume to compete
+
+Every decision cites at least one audit finding. Bare numbers forbidden.
+
+#### 6. KD Gating Decision
+- Per-DR-band keyword difficulty thresholds with rationale
+- Adjustments if niche evidence justifies tightening
+
+#### 7. Channel Bets
+- Channels we commit to AND channels we explicitly ignore (with rationales)
+- Ignore decisions are as load-bearing as commit decisions
+
+#### 8. Strategy Gates (binding falsification signals)
+Table with columns: `Gate ID | Signal | Threshold | Measurement window | Status | Mandated action on FAIL`. Required:
+- 3-7 gates total
+- At least one gate has `Mandated action: PIVOT` (binding — orchestrator enforces on failure)
+- Each gate traces to a strategic claim from sections 1-7
+
+When a binding gate fails (FAIL within its measurement window), the measurer writes `MANDATED: PIVOT` to verdict, the orchestrator transitions to PIVOT — no user menu.
+
+**Strategy Rules**:
+- **strategy.md is the only output.** Do not write plan.md or verification.md. The seo-planner-agent owns those in PLAN phase.
+- **Every claim cites a finding.** Bare claims are not allowed.
+- **Programmatic volume must be a numbered decision** — "we'll see" is not a decision.
+- **No template fallback.** If your wedge says "depth-only, no programmatic," do not include programmatic gates "just in case."
+- Wait for explicit user approval before PLAN. If user contests strategy, loop in STRATEGIZE — do not advance to PLAN with contested strategy.
+
 ### PLAN
 
-The PLAN state designs the SEO strategy. Content architecture BEFORE content creation. Always.
+The PLAN state translates approved strategy into executable tactics. Strategy is read-only here — the planner translates, never re-derives. Strategic feedback during PLAN review routes back to STRATEGIZE.
 
-**Gate check**: read `state.md`, `plan.md`, `findings.md`, `findings/*`, `audit/*`, `decisions.md`, `progress.md`, `verification.md`, `plans/FINDINGS.md` (limit: 600), `plans/DECISIONS.md` (limit: 600), `plans/LESSONS.md` before writing anything. If `audit/` has fewer than 4 reports -> go back to AUDIT.
+**Gate check**: read `strategy.md` first. If it doesn't exist or has empty required sections → STRATEGIZE wasn't completed. Do NOT write plan.md. Then read `state.md`, `plan.md`, `findings.md`, `findings/*`, `audit/*`, `decisions.md`, `progress.md`, `verification.md`, `plans/FINDINGS.md` (limit: 600), `plans/DECISIONS.md` (limit: 600), `plans/LESSONS.md`.
 
 **Strategy Components** (all required in `plan.md`):
 
@@ -300,12 +372,16 @@ The PLAN state designs the SEO strategy. Content architecture BEFORE content cre
 - **Conversions**: organic conversion rate, revenue from organic (if applicable)
 
 **Planning Rules**:
-- Write `decisions.md`: log chosen strategy + why. **Trade-off rule** — phrase every decision as **"X at the cost of Y"**. Never recommend without stating what it costs.
-- **Keyword Difficulty Gate**: never target keywords with difficulty > domain authority + 20 in the first sprint. Build authority first.
+- **strategy.md is binding.** Plan sections cite strategy.md or audit/* — every section. Citation-less sections are grounds for rejection.
+- **Programmatic volume is exact.** If strategy says "30 pages, gated on G-3", plan has exactly 30 — not "approximately 30," not "around 30 to start."
+- **Strategy Gates copy verbatim into verification.md.** No paraphrasing. The measurer evaluates the gate the strategist authored.
+- Write `decisions.md`: log chosen tactical approach + why. **Trade-off rule** — phrase every decision as **"X at the cost of Y"**. Never recommend without stating what it costs.
+- **Keyword Difficulty Gate**: enforce strategy.md → KD Gating Decision. Drop or substitute any keyword above the gate.
 - **Content Before Links**: content architecture must be complete before any outreach. You need something worth linking to.
 - **No Thin Content**: minimum 1500 words for pillar pages, 800 words for cluster content. Quality over quantity.
 - **Search Intent First**: every piece of content must match the dominant search intent for its target keyword. Check SERP results — if top 10 is all informational, don't write a product page.
-- Wait for explicit user approval before EXECUTE.
+- **No new strategic claims.** If you spot an audit gap that suggests different strategy, write to findings.md and recommend STRATEGIZE re-entry. Do not silently bake into plan.md.
+- Wait for explicit user approval before EXECUTE. If user feedback is strategic, route back to STRATEGIZE.
 
 ### EXECUTE
 
@@ -481,11 +557,12 @@ All six reads are CORE. Do not evaluate until all are complete.
 
 ### PIVOT
 
-Data-driven strategy adjustment. SEO pivots are normal — search is dynamic.
+Data-driven strategy re-derivation. SEO pivots are normal — search is dynamic. PIVOT routes to STRATEGIZE (not PLAN) so strategy is re-authored from new evidence.
 
-- Read `decisions.md`, `findings.md`, relevant `findings/*`, `audit/*`, `plans/LESSONS.md`.
+- Read `strategy.md`, `decisions.md`, `findings.md`, relevant `findings/*`, `audit/*`, `verification.md` (especially failed gate evidence), `plans/LESSONS.md`.
 - Read `checkpoints/*` — decide keep vs revert. Default: if unsure about a technical change, revert.
 - **Common SEO Pivot Triggers**:
+  - Binding Strategy Gate FAIL (`Mandated action: PIVOT`) — automatic, no menu (Sections 1-9 of strategy.md need re-derivation)
   - Target keywords are too competitive (difficulty >> domain authority)
   - Search intent shifted (informational keywords became transactional, or vice versa)
   - Google algorithm update changed ranking factors
@@ -494,11 +571,12 @@ Data-driven strategy adjustment. SEO pivots are normal — search is dynamic.
   - Backlink strategy not producing results (outreach response rate < 3%)
   - Programmatic pages getting thin content penalty
   - Cannibalization detected between new and existing content
-- **Ghost constraint scan** *(EXTENDED)* — before designing new strategy: (1) Is the keyword difficulty threshold from audit still accurate? (2) Are we still targeting keywords from 3 months ago that may have shifted? (3) Did competitor landscape change? Log ghost constraints in `decisions.md`.
+- **Ghost constraint scan** *(EXTENDED)* — before re-strategizing: (1) Is the keyword difficulty threshold from audit still accurate? (2) Are we still targeting keywords from 3 months ago that may have shifted? (3) Did competitor landscape change? (4) For binding-pivot triggers: which strategic claim was wrong, and what evidence does STRATEGIZE need? Log ghost constraints in `decisions.md`.
 - If earlier audit data proved wrong or stale -> update `audit/*` with corrections. Mark: `[CORRECTED sprint-N]`.
-- Write `decisions.md`: log pivot + data justification + mandatory Complexity Assessment.
+- Write `decisions.md`: log pivot + data justification + which Strategy Gate failed (if binding) + mandatory Complexity Assessment.
 - Write `state.md` + `progress.md` (mark abandoned items, note pivot reason with data).
-- Present options to user -> get approval -> transition to PLAN.
+- For advisory pivots: present options to user -> get approval -> transition to STRATEGIZE.
+- For binding pivots: transition to STRATEGIZE automatically (oscillation guard ≥ 2 PIVOTs is the only override and requires explicit user decomposition decision).
 
 ## Consolidated File Management
 
@@ -653,17 +731,19 @@ These provide detailed guidance for specific SEO domains. Stored in `references/
 - `references/geo-optimization.md` — Generative Engine Optimization: AI Overviews, Perplexity, ChatGPT citations, entity optimization, AI crawler management
 - `references/local-seo.md` — Google Business Profile, local citations, local schema, map pack, multi-location SEO, reputation management
 - `references/ecommerce-seo.md` — product schema, category pages, faceted navigation, product feeds, e-commerce content strategy
-- `references/measurement-framework.md` — 5-Why root cause analysis, failure classification (WRONG_TARGET/POOR_EXECUTION/EXTERNAL_FACTOR/INSUFFICIENT_TIME), convergence scoring, momentum tracking, measurement timing rules
+- `references/measurement-framework.md` — 5-Why root cause analysis, failure classification (WRONG_TARGET/POOR_EXECUTION/EXTERNAL_FACTOR/INSUFFICIENT_TIME/STRATEGY_FALSIFIED), convergence scoring, momentum tracking, measurement timing rules
+- `references/competitive-intelligence.md` — adversarial competitor audit methodology: sitemap classification, traffic-per-page signals (with proxy methods), dead-page detection, failed-template detection via archive.org, anchor profile analysis, SERP feature ownership, moat quantification (time-cost-to-replicate), evidence tier rubric. Required reading before STRATEGIZE.
 
 ## Quick Reference: 90-Day Sprint Template
 
-**Week 1-2**: AUDIT (technical + content + backlinks + competitors)
-**Week 2-3**: PLAN (topical map, content calendar, technical fix priority, link building strategy)
+**Week 1-2**: AUDIT (technical + content + backlinks + adversarial competitors)
+**Week 2**: STRATEGIZE (wedge thesis, programmatic volume decision, Strategy Gates)
+**Week 2-3**: PLAN (topical map, content calendar, technical fix priority, link building strategy — all citing strategy.md)
 **Week 3-6**: EXECUTE Phase 1 (technical fixes + content architecture)
 **Week 6-10**: EXECUTE Phase 2 (content creation + internal linking)
 **Week 8-12**: EXECUTE Phase 3 (link building + SERP optimization)
-**Week 10-12**: MEASURE (rankings, traffic, technical scores, conversions)
-**Week 12**: CLOSE or PIVOT
+**Week 10-12**: MEASURE (rankings, traffic, technical scores, conversions, Strategy Gates evaluation)
+**Week 12**: CLOSE or PIVOT (PIVOT routes back to STRATEGIZE, not PLAN)
 
 **Key Timing Rules**:
 - Technical fixes first. Always. A fast, crawlable, mobile-friendly site is the foundation.

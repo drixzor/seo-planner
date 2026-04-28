@@ -79,13 +79,15 @@ After modifying an agent:
 
 ## How to Modify the State Machine
 
-The sprint state machine (AUDIT -> PLAN -> EXECUTE -> MEASURE -> CLOSE, with PIVOT loops) is defined in multiple places that must stay in sync:
+The sprint state machine (AUDIT -> STRATEGIZE -> PLAN -> EXECUTE -> MEASURE -> CLOSE, with PIVOT looping back to STRATEGIZE) is defined in multiple places that must stay in sync:
 
-1. **`src/SKILL.md`** -- the authoritative protocol definition. Update transition rules here first.
-2. **`src/scripts/validate-plan.mjs`** -- validation logic that checks transitions. Update to match any new or changed states.
-3. **`src/scripts/bootstrap.mjs`** -- if the new state requires files to be created at sprint start, add them here.
+1. **`src/SKILL.md`** -- the authoritative protocol definition. Update transition rules, state table, file lifecycle matrix, auto-persistence, and per-state rules here first.
+2. **`src/agents/orchestrator.md`** -- the runtime control plane. Add per-phase blocks with entry conditions, gate checks, and dispatch targets. Critical Rules section enumerates invariants.
+3. **`src/scripts/validate-plan.mjs`** -- validation logic. Update `VALID_STATES` and `VALID_TRANSITIONS` to match any new or changed states (keep older transitions for backward compat with sprints created on prior versions).
+4. **`src/scripts/bootstrap.mjs`** -- if the new state requires files to be created at sprint start, add them in `cmdNew`. If it changes the recovery file list, update `cmdResume`.
+5. **`README.md`** and **`CLAUDE.md`** -- update the state diagram and prose so users see the protocol they'll experience.
 
-Always run `make validate && make test` after modifying the state machine.
+Always run `make validate && make test` after modifying the state machine. The CI workflow runs both gates on every PR to main.
 
 ## Code Style
 
