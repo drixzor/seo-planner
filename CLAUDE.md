@@ -11,8 +11,10 @@ node .seo-planner/src/scripts/bootstrap.mjs resume
 node .seo-planner/src/scripts/bootstrap.mjs close
 ```
 
-## State Machine
-AUDIT → PLAN → EXECUTE → MEASURE → CLOSE (with PIVOT loop from MEASURE back to PLAN).
+## State Machine (v1.2)
+AUDIT → STRATEGIZE → PLAN → EXECUTE → MEASURE → CLOSE (with PIVOT loop from MEASURE back to STRATEGIZE).
+
+STRATEGIZE produces `strategy.md` with binding Strategy Gates. The measurer enforces gates with `Mandated action: PIVOT` as automatic state transitions (no user menu). PIVOT routes back to STRATEGIZE so strategy is re-derived from new evidence — not just re-planned with the same assumptions.
 
 ## Key Files
 1. `src/SKILL.md` — master protocol (load this as the skill)
@@ -25,3 +27,10 @@ AUDIT → PLAN → EXECUTE → MEASURE → CLOSE (with PIVOT loop from MEASURE b
 - `plans/` directory holds all sprint data (gitignored).
 - Cross-sprint learning via FINDINGS.md, DECISIONS.md, LESSONS.md.
 - LESSONS.md ≤200 lines, rewritten each sprint close.
+
+## v1.2 Migration
+v1.1 sprints in flight need a `strategy.md` backfilled before resuming. Run:
+```bash
+node <skill-path>/scripts/bootstrap.mjs migrate-v12 [path]
+```
+Without `[path]`, uses the current pointer. Outputs a `strategy.md` stub with v1.1 plan sections quoted as TODOs for manual completion.

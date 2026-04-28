@@ -1,5 +1,7 @@
 # SEO Sprint State
 
+> **Note (v1.2)**: This example was authored against the v1.1 protocol (AUDIT → PLAN → EXECUTE → MEASURE → CLOSE with PIVOT looping back to PLAN). It remains a faithful demonstration of the iterative state machine and the SCORE framework. v1.2 inserts a `STRATEGIZE` phase between AUDIT and PLAN, and routes PIVOT back to STRATEGIZE so strategy is re-derived from new evidence. For the current v1.2 flow, see `src/SKILL.md`. Both v1.1 and v1.2 transitions are accepted by `validate-plan.mjs`.
+
 ## Current State
 **Phase:** CLOSE
 **Iteration:** 2 (pivoted once)
