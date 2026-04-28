@@ -17,9 +17,11 @@ REQUIRED_FILES := \
 	src/references/backlink-strategy.md \
 	src/references/on-page-seo.md \
 	src/references/scoring-framework.md \
+	src/references/competitive-intelligence.md \
 	src/agents/orchestrator.md \
 	src/agents/seo-auditor.md \
 	src/agents/seo-strategist.md \
+	src/agents/seo-planner-agent.md \
 	src/agents/seo-executor.md \
 	src/agents/seo-measurer.md \
 	src/agents/seo-reviewer.md \
