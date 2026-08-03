@@ -723,12 +723,12 @@ Increment on PLAN -> EXECUTE. Sprint 0 = AUDIT-only (pre-strategy). First real =
 These provide detailed guidance for specific SEO domains. Stored in `references/`.
 
 - `references/file-formats.md` — templates for all `{plan-dir}` files including audit templates
-- `references/technical-seo.md` — Core Web Vitals, schema markup, crawl budget, rendering, JavaScript SEO, international SEO
+- `references/technical-seo.md` — Core Web Vitals, schema markup, crawl budget, IndexNow rapid indexing, rendering, JavaScript SEO, international SEO
 - `references/content-strategy.md` — topical maps, content clusters, search intent, content briefs, programmatic SEO
 - `references/backlink-strategy.md` — digital PR, link building frameworks, anchor text, link audits, foundational links
 - `references/on-page-seo.md` — 45-point on-page optimization checklist (title, meta, headings, images, schema, UX, CTA)
 - `references/scoring-framework.md` — SCORE evaluation rubric (1-5 per dimension), sprint readiness, 90-day milestones
-- `references/geo-optimization.md` — Generative Engine Optimization: AI Overviews, Perplexity, ChatGPT citations, entity optimization, AI crawler management
+- `references/geo-optimization.md` — Generative Engine Optimization: AI Overviews, Perplexity, ChatGPT citations, entity optimization, explicit AI crawler allowlist, llms.txt
 - `references/local-seo.md` — Google Business Profile, local citations, local schema, map pack, multi-location SEO, reputation management
 - `references/ecommerce-seo.md` — product schema, category pages, faceted navigation, product feeds, e-commerce content strategy
 - `references/measurement-framework.md` — 5-Why root cause analysis, failure classification (WRONG_TARGET/POOR_EXECUTION/EXTERNAL_FACTOR/INSUFFICIENT_TIME/STRATEGY_FALSIFIED), convergence scoring, momentum tracking, measurement timing rules
