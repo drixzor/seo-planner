@@ -42,6 +42,8 @@ If a file doesn't exist, note it as "Not available" and proceed with what you ha
 
 ## Step 2: Write summary.md
 
+**Write plain-first.** `summary.md` and `LESSONS.md` are read by the business owner and by future sprints — not just by engineers. Prefer plain language over accreted jargon: spell out or gloss any protocol shorthand (SCORE, wedge, moat, evidence tier, gate) on first use, expand acronyms once, and state outcomes in business terms (rankings, traffic, leads, revenue) before internal mechanics. If a sentence only makes sense to someone who has read the protocol, rewrite it. Coded tags and internal identifiers belong in the cross-referenced artifacts, not in the human-facing narrative.
+
 Create `{plan-dir}/summary.md` with this exact template:
 
 ```markdown

@@ -21,6 +21,7 @@ STRATEGIZE produces `strategy.md` with binding Strategy Gates. The measurer enfo
 2. `src/references/` — SEO frameworks, checklists, templates
 3. `src/agents/` — sub-agent definitions
 4. `src/scripts/bootstrap.mjs` — sprint directory management
+5. `src/scripts/` gates — `check-changelog-parity`, `check-readme-parity`, `check-agent-wiring` (fail-loud parity/wiring gates run by `make check` / `make validate`); `submit-indexnow.mjs` (IndexNow rapid indexing)
 
 ## Architecture
 - Filesystem = persistent memory. Context window = RAM.
