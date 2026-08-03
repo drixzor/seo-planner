@@ -12,8 +12,9 @@ cd seo-planner
 
 # Verify everything works
 make lint       # syntax-check all .mjs files
-make validate   # check required files, cross-references, agent frontmatter
-make test       # run test suite
+make validate   # required files, cross-references, agent frontmatter + parity gates
+make check      # parity/wiring gates only (also run by validate)
+make test       # run the full test suite
 ```
 
 `make all` runs build, validate, and test in sequence.
@@ -21,8 +22,8 @@ make test       # run test suite
 ## Running Tests
 
 ```bash
-# Run the full test suite
-node --test src/scripts/bootstrap.test.mjs
+# Run the full test suite (all *.test.mjs)
+node --test src/scripts/*.test.mjs
 
 # Or via Make
 make test
@@ -30,11 +31,17 @@ make test
 
 ## Validation
 
-The `make validate` target checks three things:
+The `make validate` target checks:
 
 1. All required files exist (SKILL.md, agents, references, scripts)
 2. Cross-references in SKILL.md point to real files
 3. Agent files have required YAML frontmatter fields
+4. **Parity/wiring gates** (via `make check`, run at the end of `validate`):
+   - `check-changelog-parity` — the top `## [X.Y.Z]` CHANGELOG entry equals `VERSION`
+   - `check-readme-parity` — the README version badge equals `VERSION`
+   - `check-agent-wiring` — every `references/*.md` citation across agents + SKILL.md + references resolves
+
+These gates are executable, zero-dependency, and fail loud. Each has a proven-RED test in `checks.test.mjs` (a gate that can only be observed passing is not trusted). When you bump `VERSION`, update the CHANGELOG top entry AND the README badge in the same change, or `make validate` fails.
 
 Always run `make validate` before submitting a PR.
 

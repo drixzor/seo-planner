@@ -1,7 +1,7 @@
 # SEO Planner
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Skill](https://img.shields.io/badge/Skill-v1.2.0-green.svg)](VERSION)
+[![Skill](https://img.shields.io/badge/Skill-v1.3.0-green.svg)](VERSION)
 
 A [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that turns SEO from guesswork into a system. It runs structured 90-day sprints — audit the site, plan the strategy, execute changes, measure results, and pivot based on data. Everything gets written to disk. The AI doesn't forget what it found, what it tried, or what worked.
 
@@ -189,6 +189,10 @@ src/
 |   +-- bootstrap.mjs               # Sprint directory management
 |   +-- bootstrap.test.mjs          # Test suite
 |   +-- validate-plan.mjs           # Protocol compliance validator
+|   +-- submit-indexnow.mjs         # IndexNow rapid-indexing submitter (Bing/Yandex/…)
+|   +-- check-changelog-parity.mjs  # Gate: CHANGELOG top entry == VERSION
+|   +-- check-readme-parity.mjs     # Gate: README version badge == VERSION
+|   +-- check-agent-wiring.mjs      # Gate: every references/*.md citation resolves
 +-- references/
     +-- technical-seo.md            # Technical audit checklist (CWV, crawl, schema, mobile)
     +-- content-strategy.md         # Topical maps, pillar-cluster architecture, pSEO

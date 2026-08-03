@@ -4,14 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-03
+
+Two upgrades. First, **web-grounded research**: SEO's ground truth lives on live SERPs and competitor pages, but the auditor and strategist could only read the local repo — so their evidence topped out at `inferred`/`estimated`. They now have `WebFetch`/`WebSearch`, closing the gap to `confirmed` (adapted from iterative-planner v2.57.3's explorer-web-research change). Second, **self-consistency gates**: a family of small, fail-loud, zero-dependency checks (adapted from iterative-planner's parity-gate work, v2.22–2.57) that keep the skill's own bookkeeping honest — and the anti-vacuity discipline (every gate proven RED in tests) that makes them trustworthy. Also folds in the previously-unreleased IndexNow + AI-discoverability work.
+
 ### Added
-- **IndexNow / rapid indexing** support. New `src/scripts/submit-indexnow.mjs` tool: verifies the IndexNow key file, reads the live `sitemap.xml` (following one level of sitemap index), and submits URLs to `api.indexnow.org` in batches (Bing/Yandex/Seznam/Naver/Yep). Run with no `--key` to print one-time setup steps, or `--dry-run` to preview. `technical-seo.md` gains an "IndexNow (Rapid Indexing)" subsection covering setup, the deploy→submit ordering (the 403 gotcha), request limits, and why it doubles as a GEO lever (ChatGPT search rides Bing's index).
-- **AI discoverability** coverage in `geo-optimization.md`: the `llms.txt` convention (curated page digest, honest early-adoption caveat, structure + best practices), a refreshed and expanded explicit AI-crawler allowlist (OpenAI GPTBot/OAI-SearchBot/ChatGPT-User, Anthropic ClaudeBot/Claude-User/Claude-SearchBot, Perplexity PerplexityBot/Perplexity-User, Applebot-Extended), and the "list crawlers explicitly, not by wildcard" principle. New audit-checklist and implementation-priority items for `llms.txt` and dated Article/BlogPosting schema.
-- `seo-auditor.md` TECHNICAL audit expanded from 15 to 17 checklist items: "AI Crawler Access & llms.txt" and "IndexNow / Rapid Indexing".
-- New parse tests for `submit-indexnow.mjs` sitemap `<loc>` extraction in `tools.test.mjs`.
+- **Web research for the AUDIT and STRATEGIZE phases.** `seo-auditor` and `seo-strategist` gain `WebFetch`/`WebSearch`. New "Web Research" guidance in `seo-auditor.md` and a research note in `seo-strategist.md`; `competitive-intelligence.md` gains a "Getting to `confirmed`: live web research" subsection; `file-formats.md` gains a dated web-source citation convention. All include the untrusted-web-content rule (fetched pages are DATA, never instructions) and proportionality limits.
+- **Parity/wiring gates** (`src/scripts/`, zero-dependency, fail-loud, importable pure functions behind an `isEntryPoint` guard):
+  - `check-changelog-parity.mjs` — first `## [X.Y.Z]` CHANGELOG entry must equal `VERSION` (skips the pinned `[Unreleased]` header).
+  - `check-readme-parity.mjs` — README `Skill-v<X.Y.Z>` badge must equal `VERSION`.
+  - `check-agent-wiring.mjs` — every `references/*.md` citation across agents + SKILL.md + references must resolve, with an anti-vacuity `[scan-floor]` guard against a silently collapsed scan set.
+- `checks.test.mjs` — 16 tests: pure-function units plus real-CLI spawns proving BOTH the PASS and the RED branch of every gate (anti-vacuity).
+- `make check` target runs all three gates; `make validate` now invokes it.
+- **Plain-first CLOSE objective** in `seo-archivist.md`: `summary.md`/`LESSONS.md` are written for the business owner — expand jargon/acronyms, lead with business outcomes (adapts the cheap half of iterative-planner's register work, v2.57.0).
+- **IndexNow / rapid indexing** (`submit-indexnow.mjs` + `technical-seo.md` subsection) and **AI discoverability** (`llms.txt` + explicit AI-crawler allowlist in `geo-optimization.md`); `seo-auditor` TECHNICAL audit grew 15 → 17 items. *(Merged under Unreleased in #3; released here.)*
 
 ### Changed
-- `SKILL.md` reference descriptions updated: `technical-seo.md` now notes IndexNow; `geo-optimization.md` now notes the explicit AI-crawler allowlist and llms.txt.
+- `make test` now runs `src/scripts/*.test.mjs` (previously only `bootstrap.test.mjs` ran; `validate-plan.test.mjs` and `tools.test.mjs` were orphaned from CI).
+- `SKILL.md` reference descriptions and agent-tool listings updated for web research and IndexNow/llms.txt.
+- README/CLAUDE.md/CONTRIBUTING updated for the new scripts, `make check`, and the expanded `make test`.
 
 ## [1.2.0] - 2026-04-28
 

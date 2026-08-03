@@ -56,8 +56,8 @@ stateDiagram-v2
 
 | State | Purpose | Allowed Actions |
 |-------|---------|-----------------|
-| AUDIT | Comprehensive SEO audit (adversarial competitor analysis is load-bearing) | Read-only on website/codebase. Write only to `{plan-dir}`. Run analysis tools. |
-| STRATEGIZE | Derive evidence-bound wedge thesis, programmatic volume decision, and binding Strategy Gates | Write `strategy.md` only. Read audits + LESSONS + DECISIONS. NO plan.md, NO implementation. |
+| AUDIT | Comprehensive SEO audit (adversarial competitor analysis is load-bearing) | Read-only on website/codebase. Write only to `{plan-dir}`. Run analysis tools. Live web research (`WebFetch`/`WebSearch`) for `confirmed`-tier competitor/SERP evidence. |
+| STRATEGIZE | Derive evidence-bound wedge thesis, programmatic volume decision, and binding Strategy Gates | Write `strategy.md` only. Read audits + LESSONS + DECISIONS. May spot-check claims via `WebFetch`/`WebSearch`. NO plan.md, NO implementation. |
 | PLAN | Translate strategy into executable tactics | Write plan.md + verification.md (with Strategy Gates copied verbatim). NO strategic claims, NO implementation. |
 | EXECUTE | Implement SEO changes | Edit files, create content, fix technical issues, add schema, build internal links. |
 | MEASURE | Track & evaluate results; enforce binding Strategy Gates | Read analytics, run audits, compare baselines. Update verification.md, decisions.md. When MANDATED: PIVOT verdict fires, transition without user menu. |

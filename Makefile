@@ -31,7 +31,7 @@ AGENT_FILES := $(wildcard src/agents/*.md)
 MJS_FILES := $(wildcard src/scripts/*.mjs)
 REFERENCE_FILES := $(wildcard src/references/*.md)
 
-.PHONY: all build build-combined package package-combined package-tar validate lint test clean
+.PHONY: all build build-combined package package-combined package-tar validate check lint test clean
 
 all: build validate test
 	@echo "==> All targets complete (v$(VERSION))"
@@ -121,6 +121,18 @@ validate:
 	else \
 		echo "==> Validation passed"; \
 	fi
+	@$(MAKE) --no-print-directory check
+
+# ---------------------------------------------------------------------------
+# Parity / wiring gates (executable, fail-loud, zero-dependency)
+# ---------------------------------------------------------------------------
+
+check:
+	@echo "==> Running parity/wiring gates..."
+	@node src/scripts/check-changelog-parity.mjs
+	@node src/scripts/check-readme-parity.mjs
+	@node src/scripts/check-agent-wiring.mjs
+	@echo "==> Gates passed"
 
 # ---------------------------------------------------------------------------
 # Lint & Test
@@ -146,7 +158,7 @@ lint:
 
 test:
 	@echo "==> Running tests..."
-	@node --test src/scripts/bootstrap.test.mjs
+	@node --test src/scripts/*.test.mjs
 	@echo "==> Tests passed"
 
 # ---------------------------------------------------------------------------
