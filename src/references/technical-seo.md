@@ -99,6 +99,32 @@ Sitemap: https://example.com/sitemap.xml
 - [ ] Sitemap is dynamically generated (not manually maintained)
 - [ ] Includes all important page types (pages, posts, categories, products)
 
+### IndexNow (Rapid Indexing for Bing, Yandex, and others)
+
+IndexNow is a push protocol: instead of waiting for a crawler to *discover* that a URL changed, you notify participating engines directly and they recrawl sooner (often hours instead of days/weeks). It is the single fastest lever for non-Google indexation, and it is free.
+
+- **Who participates**: Bing, Yandex, Seznam, Naver, Yep. Submitting to `api.indexnow.org` fans a single request out to all of them.
+- **Who does NOT**: Google. Google does not consume IndexNow — keep using Search Console + the sitemap for Google. (Do not drop your Google workflow because you added IndexNow.)
+- **Why it matters beyond Bing**: ChatGPT search retrieval leans on Bing's index. Faster Bing coverage compounds into AI answer-engine visibility (see `geo-optimization.md`), so IndexNow is both a traditional-SEO and a GEO lever.
+
+**Setup (one time):**
+- [ ] Generate a key (8–128 hex characters).
+- [ ] Host a text file at the site root named `<key>.txt` whose only contents are the key itself — e.g. `https://example.com/<key>.txt` → `<key>`.
+- [ ] Deploy so the key file is LIVE before your first submission.
+
+**Submitting:**
+- [ ] After each deploy that changes/adds pages, POST the changed URLs to `https://api.indexnow.org/indexnow` with `{ host, key, keyLocation, urlList }`.
+- [ ] Drive `urlList` from the live `sitemap.xml` so submissions never drift from what is actually published.
+- [ ] Max 10,000 URLs per request — chunk larger sets.
+
+**Gotchas:**
+- **403 during validation** — the #1 failure. The key file must be reachable at `keyLocation` *before* you submit. Order is always **deploy → submit**, never the reverse.
+- **422** — URL/host or key mismatch (a submitted URL is on a different host than `host`, or the key doesn't match the key file).
+- **429** — rate limited; back off and retry.
+- Only submit URLs that return 200 and are canonical + indexable (same discipline as the sitemap).
+
+**Tooling**: `scripts/submit-indexnow.mjs` automates this — it verifies the key file, reads the live sitemap (following one level of sitemap index), and submits in batches. Run `node scripts/submit-indexnow.mjs https://example.com` with no key to print setup steps, or `--dry-run` to preview the URL list.
+
 ### Crawl Budget
 - [ ] Fix crawl errors reported in Search Console
 - [ ] Eliminate soft 404s (pages returning 200 but with "not found" content)

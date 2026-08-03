@@ -209,28 +209,43 @@ AI systems learn entity associations from brand mentions across the web, even wi
 
 AI crawlers respect robots.txt. If you block them, you cannot be cited.
 
+**List AI crawlers explicitly — do not rely on the `*` wildcard.** A blanket `User-agent: *` rule technically lets them in, but naming each answer-engine crawler makes "we want to be discoverable here" an *intentional, auditable* decision that a future wildcard tweak (e.g. a new `Disallow`) can't silently break. Give them the same access as search crawlers — everything except private paths (dashboards, admin, APIs, checkout).
+
 **Recommended robots.txt additions**:
 
 ```
-# Allow AI crawlers
+# Allow AI / answer-engine crawlers explicitly (intentional, not by wildcard accident)
+# OpenAI / ChatGPT (ChatGPT search also rides Bing's index — see technical-seo.md IndexNow)
 User-agent: GPTBot
 Allow: /
-
-User-agent: Google-Extended
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
 Allow: /
 
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+User-agent: Perplexity-User
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
 User-agent: anthropic-ai
 Allow: /
 
-User-agent: ClaudeBot
+# Google (Gemini / AI Overviews training) and Apple
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
 Allow: /
 
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Bytespider
-Allow: /
-
+# Open datasets used by many AI labs
 User-agent: CCBot
 Allow: /
 ```
@@ -239,16 +254,59 @@ Allow: /
 
 | Crawler | Operator | Purpose |
 |---------|----------|---------|
-| GPTBot | OpenAI | ChatGPT browsing and training |
-| ChatGPT-User | OpenAI | Real-time ChatGPT browsing |
+| GPTBot | OpenAI | ChatGPT training crawler |
+| OAI-SearchBot | OpenAI | ChatGPT search indexing |
+| ChatGPT-User | OpenAI | Real-time ChatGPT browsing (user-triggered) |
+| PerplexityBot | Perplexity | Perplexity answer-index crawler |
+| Perplexity-User | Perplexity | Real-time Perplexity fetch (user-triggered) |
+| ClaudeBot | Anthropic | Claude training crawler |
+| Claude-User | Anthropic | Real-time Claude browsing (user-triggered) |
+| Claude-SearchBot | Anthropic | Claude search indexing |
 | Google-Extended | Google | Gemini / AI Overviews training |
 | Googlebot | Google | Standard indexing (also feeds AI Overviews) |
-| anthropic-ai / ClaudeBot | Anthropic | Claude training and browsing |
-| PerplexityBot | Perplexity | Perplexity answer retrieval |
+| Applebot-Extended | Apple | Apple Intelligence training opt-in |
 | Bytespider | ByteDance | AI training |
 | CCBot | Common Crawl | Open dataset used by many AI labs |
 
+Note: OpenAI, Perplexity, and Anthropic each split their crawlers into a **training/index** bot and a **user-triggered** fetcher. Allow both — blocking the user-triggered one (e.g. `ChatGPT-User`, `Perplexity-User`, `Claude-User`) stops the assistant from reading your page when a user explicitly asks about you.
+
 **Important**: Blocking `Google-Extended` does NOT prevent your content from appearing in AI Overviews. AI Overviews use the regular Google index (Googlebot). `Google-Extended` controls whether your content is used for Gemini model training. You likely want to allow both.
+
+### The llms.txt Convention
+
+`llms.txt` ([llmstxt.org](https://llmstxt.org)) is a plain-Markdown file at your site root — the AI-era analogue of a sitemap. Where `sitemap.xml` is an exhaustive URL dump for crawlers, `llms.txt` is a **curated, hand-picked digest** of the pages worth citing, each with a one-line description, so a compliant assistant gets a clean, high-signal map of what your site is and which page best answers which question.
+
+**Honest status**: adoption is still early — not every major assistant consumes `llms.txt` yet, and it does not replace the robots allowlist or getting into engine indexes (which do the heavy lifting today). But it is cheap, has no downside, and is a strong signal for the crawlers that do read it. Treat it as a low-cost complement, not a silver bullet.
+
+**Structure** (keep it curated, not a full URL list):
+
+```
+# Brand Name
+
+> One-paragraph description: what the product/site is, who it's for, the core value,
+> and a concrete anchor fact (pricing, free trial, key differentiator).
+
+## Guides
+- [Page title](https://example.com/guide): One line on what question this page answers.
+
+## By industry
+- [Industry page](https://example.com/industries/x): One line on the use case.
+
+## Comparisons
+- [X vs Y](https://example.com/vs/y): One line on the comparison.
+
+## Company
+- [Pricing](https://example.com/pricing)
+- [Privacy](https://example.com/privacy)
+```
+
+**Best practices**:
+- [ ] Serve it at `/llms.txt` as `text/plain`, statically (or cached at the edge).
+- [ ] Lead with a tight one-paragraph summary containing a citable anchor fact (price, trial length, headline metric).
+- [ ] Curate to pages genuinely worth citing — guides, definitions, comparisons, tools/calculators, pricing. Omit thin or transactional pages.
+- [ ] Group links under clear `##` section headings; give each link a one-line description of the question it answers.
+- [ ] Keep it in sync when you add cite-worthy pages (same discipline as the sitemap, but hand-curated).
+- [ ] Optional: an `/llms-full.txt` variant that inlines the full text of key pages for assistants that fetch it.
 
 ### Semantic HTML Structure
 
@@ -408,13 +466,21 @@ GEO is an additional optimization layer on top of solid SEO foundations. A site 
 Run this checklist for any site targeting AI citation visibility.
 
 ### Crawler Access
-- [ ] GPTBot is allowed in robots.txt
-- [ ] ClaudeBot / anthropic-ai is allowed in robots.txt
-- [ ] PerplexityBot is allowed in robots.txt
+- [ ] AI crawlers are listed EXPLICITLY in robots.txt (not just relying on `User-agent: *`)
+- [ ] OpenAI is allowed (GPTBot, OAI-SearchBot, ChatGPT-User)
+- [ ] Anthropic is allowed (ClaudeBot, Claude-User, Claude-SearchBot)
+- [ ] Perplexity is allowed (PerplexityBot, Perplexity-User)
 - [ ] Google-Extended is allowed in robots.txt (for Gemini training)
+- [ ] User-triggered fetchers are NOT blocked (ChatGPT-User, Perplexity-User, Claude-User)
 - [ ] No accidental wildcard blocks that catch AI crawlers
 - [ ] Content is accessible without JavaScript execution
 - [ ] No paywall or login wall blocking content access
+
+### AI Discoverability Signals
+- [ ] `/llms.txt` exists, served as text/plain, with a curated page digest (see Section 5)
+- [ ] `llms.txt` leads with a one-paragraph summary containing a citable anchor fact
+- [ ] `llms.txt` is kept in sync as cite-worthy pages are added
+- [ ] Article/BlogPosting schema with `datePublished`/`dateModified` on all content pages (freshness + attribution signal)
 
 ### Content Structure
 - [ ] Key pages have direct-answer paragraphs (question -> concise answer -> detail)
@@ -458,14 +524,15 @@ Run this checklist for any site targeting AI citation visibility.
 
 For teams starting GEO optimization, prioritize in this order:
 
-1. **Allow AI crawlers** (robots.txt) — immediate, 5 minutes
-2. **Add structured data** (FAQPage, Article, Organization) — 1-2 days
-3. **Restructure top 10 pages** with direct-answer paragraphs — 1 week
-4. **Add FAQ sections** to top 20 traffic pages — 1 week
-5. **Create original data content** (survey, benchmark, statistics page) — 2-4 weeks
-6. **Build entity presence** (Wikidata, Knowledge Panel, brand mentions) — ongoing
-7. **Set up monitoring** (citation tracking, referral analytics) — 1 day
-8. **Develop comparison and definition content** for high-volume queries — ongoing
+1. **Allow AI crawlers explicitly** (robots.txt) — immediate, 5 minutes
+2. **Publish `/llms.txt`** — a curated digest of cite-worthy pages — immediate, 30 minutes
+3. **Add structured data** (FAQPage, Article/BlogPosting with dates, Organization) — 1-2 days
+4. **Restructure top 10 pages** with direct-answer paragraphs — 1 week
+5. **Add FAQ sections** to top 20 traffic pages — 1 week
+6. **Create original data content** (survey, benchmark, statistics page) — 2-4 weeks
+7. **Build entity presence** (Wikidata, Knowledge Panel, brand mentions) — ongoing
+8. **Set up monitoring** (citation tracking, referral analytics) — 1 day
+9. **Develop comparison and definition content** for high-volume queries — ongoing
 
 ---
 

@@ -520,3 +520,54 @@ describe("sitemap-checker: edge cases", () => {
     assert.strictEqual(result.urls[0].loc, "https://example.com/page", "Should trim whitespace");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Duplicated pure function from submit-indexnow.mjs
+// (submit-indexnow.mjs runs argument parsing + main() on import, so we copy the
+//  extraction logic rather than importing it — same pattern as the sibling tools.)
+// ---------------------------------------------------------------------------
+
+function extractLocs(xml) {
+  const locs = [...xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map((m) => m[1].trim());
+  const isIndex = /<sitemapindex[\s>]/i.test(xml);
+  return { locs, isIndex };
+}
+
+describe("submit-indexnow: extractLocs", () => {
+  it("extracts page URLs from a urlset", () => {
+    const xml = `<?xml version="1.0"?>
+      <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <url><loc>https://example.com/</loc></url>
+        <url><loc>https://example.com/pricing</loc></url>
+      </urlset>`;
+    const { locs, isIndex } = extractLocs(xml);
+    assert.strictEqual(isIndex, false, "urlset is not a sitemap index");
+    assert.deepStrictEqual(locs, ["https://example.com/", "https://example.com/pricing"]);
+  });
+
+  it("flags a sitemap index and returns its child sitemap locs", () => {
+    const xml = `<?xml version="1.0"?>
+      <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <sitemap><loc>https://example.com/sitemap-1.xml</loc></sitemap>
+        <sitemap><loc>https://example.com/sitemap-2.xml</loc></sitemap>
+      </sitemapindex>`;
+    const { locs, isIndex } = extractLocs(xml);
+    assert.strictEqual(isIndex, true, "should detect sitemap index");
+    assert.strictEqual(locs.length, 2);
+    assert.ok(locs[0].endsWith("sitemap-1.xml"));
+  });
+
+  it("trims whitespace inside loc tags", () => {
+    const xml = `<urlset><url><loc>
+      https://example.com/page
+    </loc></url></urlset>`;
+    const { locs } = extractLocs(xml);
+    assert.deepStrictEqual(locs, ["https://example.com/page"]);
+  });
+
+  it("returns an empty list when there are no loc tags", () => {
+    const { locs, isIndex } = extractLocs(`<urlset></urlset>`);
+    assert.deepStrictEqual(locs, []);
+    assert.strictEqual(isIndex, false);
+  });
+});

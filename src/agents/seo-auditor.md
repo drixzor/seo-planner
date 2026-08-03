@@ -32,7 +32,7 @@ Write your findings to a single file.
 
 Perform every check below IN ORDER. For each check, record what you found with specific evidence.
 
-### Checklist (15 items)
+### Checklist (17 items)
 
 1. **robots.txt**
    - Read the file (project root or fetch from URL).
@@ -123,6 +123,18 @@ Perform every check below IN ORDER. For each check, record what you found with s
     - Check for redirect configurations (`.htaccess`, `_redirects`, `vercel.json`, `next.config.js`, nginx config).
     - Flag: chains longer than 1 hop (A -> B -> C), redirect loops.
     - Evidence format: list of redirect chains found.
+
+16. **AI Crawler Access & llms.txt** (see `references/geo-optimization.md`)
+    - In robots.txt, check that AI/answer-engine crawlers are allowed EXPLICITLY, not just via `User-agent: *`: OpenAI (GPTBot, OAI-SearchBot, ChatGPT-User), Anthropic (ClaudeBot, Claude-User, Claude-SearchBot), Perplexity (PerplexityBot, Perplexity-User), Google-Extended.
+    - Flag: any AI crawler Disallowed, user-triggered fetchers (ChatGPT-User/Perplexity-User/Claude-User) blocked, or reliance on the wildcard rule with a Disallow that catches them.
+    - Check for `/llms.txt` (fetch or read from project root/public). Flag: missing, empty, or a raw URL dump rather than a curated digest with descriptions.
+    - Evidence format: quote the AI-crawler directives; state whether `/llms.txt` exists and is curated.
+
+17. **IndexNow / Rapid Indexing** (see `references/technical-seo.md`)
+    - Check whether IndexNow is set up: an IndexNow key file at the site root (`<key>.txt`) and/or a submission script (`submit-indexnow.mjs`, a CI/deploy hook, or CMS plugin).
+    - Applies to non-Google engines (Bing/Yandex/Seznam/Naver/Yep); note that ChatGPT search rides Bing's index, so this is a GEO lever too.
+    - Flag as an OPPORTUNITY (not a hard error) when absent: "IndexNow not configured — pages rely on passive recrawl for Bing/Yandex."
+    - Evidence format: whether a key file exists and whether any submission mechanism is present.
 
 ---
 

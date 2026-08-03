@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **IndexNow / rapid indexing** support. New `src/scripts/submit-indexnow.mjs` tool: verifies the IndexNow key file, reads the live `sitemap.xml` (following one level of sitemap index), and submits URLs to `api.indexnow.org` in batches (Bing/Yandex/Seznam/Naver/Yep). Run with no `--key` to print one-time setup steps, or `--dry-run` to preview. `technical-seo.md` gains an "IndexNow (Rapid Indexing)" subsection covering setup, the deploy→submit ordering (the 403 gotcha), request limits, and why it doubles as a GEO lever (ChatGPT search rides Bing's index).
+- **AI discoverability** coverage in `geo-optimization.md`: the `llms.txt` convention (curated page digest, honest early-adoption caveat, structure + best practices), a refreshed and expanded explicit AI-crawler allowlist (OpenAI GPTBot/OAI-SearchBot/ChatGPT-User, Anthropic ClaudeBot/Claude-User/Claude-SearchBot, Perplexity PerplexityBot/Perplexity-User, Applebot-Extended), and the "list crawlers explicitly, not by wildcard" principle. New audit-checklist and implementation-priority items for `llms.txt` and dated Article/BlogPosting schema.
+- `seo-auditor.md` TECHNICAL audit expanded from 15 to 17 checklist items: "AI Crawler Access & llms.txt" and "IndexNow / Rapid Indexing".
+- New parse tests for `submit-indexnow.mjs` sitemap `<loc>` extraction in `tools.test.mjs`.
+
+### Changed
+- `SKILL.md` reference descriptions updated: `technical-seo.md` now notes IndexNow; `geo-optimization.md` now notes the explicit AI-crawler allowlist and llms.txt.
+
 ## [1.2.0] - 2026-04-28
 
 Evidence-driven strategy. The first real-site test (WorkCyprus / cyprusjobs.com) revealed a structural failure: a v1.1 sprint shipped 150 programmatic city+category pages on a DR 0 domain in the same execution pass as foundation work. The plan correctly scheduled programmatic for "Week 6-8", but those week labels were decorative — the orchestrator only enforces dependency annotations, never calendar dates. Strategy was rationalized post-hoc rather than derived from adversarial competitor evidence, and the pre-mortem's "STOP IF zero pages indexed" signal lived as prose in plan.md, invisible to the measurer. v1.2 addresses the structural cause, not just the symptom. Tracking: [#1](https://github.com/drixzor/seo-planner/issues/1).
