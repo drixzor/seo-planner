@@ -127,12 +127,14 @@ Report what changed. Update tracking files.
    - Understand the search intent: what does a user searching this want?
 
 3. **Write the content** following the on-page SEO checklist:
-   - **Title tag**: 50-60 chars, primary keyword near start.
+   - **Title tag**: 50-60 chars, primary keyword near start. Name the topic and what the page does for the reader; no clickbait.
    - **Meta description**: 150-160 chars, compelling, includes keyword.
    - **H1**: matches title intent, includes primary keyword.
+   - **Key takeaways block**: 4-6 sentences directly under the H1 that answer the query outright. Each sentence must make sense lifted out of the page on its own, with a concrete number, date, or finding where one exists.
    - **First paragraph**: mention primary keyword within first 100 words.
-   - **H2/H3 subheadings**: use secondary keywords and questions naturally.
-   - **Body**: natural keyword usage (1-2% density), short paragraphs (3-4 sentences max), use lists where appropriate.
+   - **H2/H3 subheadings**: one H2 per sub-question a reader (or an answer engine splitting the prompt) would ask: what it is, what it costs, how to choose, etc. Phrase as the question and open each section with the answer, then explain.
+   - **Body**: write for the reader, not a density target (see `references/on-page-seo.md` point 31). Short paragraphs (3-4 sentences max). Every paragraph must stand alone: no "as mentioned above", no pronouns pointing at a previous paragraph. Pricing, comparisons, and specs go in HTML tables; steps go in numbered lists.
+   - **Non-commodity content**: a model already knows the definition. Include at least one thing the top results do not have (first-hand data, an audit finding, a counter-intuitive result) and attach sample size and date to any figure you generate.
    - **Word count**: meet the target from the brief (minimum 300 words for any page, 2000+ for pillar pages).
    - **Conclusion**: summarize key points, include CTA.
 
@@ -168,6 +170,8 @@ Report what changed. Update tracking files.
    - Outdated information? Update facts, dates, statistics.
    - Missing FAQ section? Add if relevant questions exist.
    - Missing schema? Add appropriate schema markup.
+   - No answer above the fold? Add a key takeaways block under the H1 (4-6 self-contained sentences).
+   - Paragraphs that depend on the one before them ("as mentioned above", dangling pronouns)? Rewrite so each stands alone.
 3. **Make changes** using Edit (not Write) to preserve existing content and make targeted improvements.
 4. **Verify**: run a word count, check heading hierarchy, count internal links.
 
