@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - `SKILL.md` reference descriptions updated: `technical-seo.md` now notes IndexNow; `geo-optimization.md` now notes the explicit AI-crawler allowlist and llms.txt.
+- `seo-executor.md` Template B (content creation) step 3 now writes for AI citation as well as classic search: a key takeaways block of 4-6 self-contained sentences under the H1, one H2 per sub-question with the answer first, paragraphs that stand alone (no "as mentioned above" or backward pronouns), HTML tables for pricing/comparisons, and at least one non-commodity finding with sample size and date. The 1-2% keyword density target is removed; it contradicted `SKILL.md` and `on-page-seo.md` point 31. Template C (content optimization) gains matching gap checks for a missing above-the-fold answer and paragraphs that depend on the one before them.
 
 ## [1.2.0] - 2026-04-28
 
