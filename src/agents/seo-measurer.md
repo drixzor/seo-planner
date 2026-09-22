@@ -68,6 +68,7 @@ collect evidence and assign PASS or FAIL.
 | **Thin content** | Count pages under 300 words. | Zero (excluding functional pages) |
 | **Duplicate titles** | Group pages by title text. | Zero duplicate groups |
 | **Content freshness** | Check last-modified dates. | No stale content flagged in plan |
+| **Striking-distance pass** (if any Template E task completed) | For each page/query row in the executor's Template E report, read the current average position from a fresh GSC export in `{plan-dir}/data/` (>= 28 days after the change; see Timing Rules) and compute the delta vs. position-before. | Median delta across touched queries is negative (moved toward 1); no touched query dropped more than 5 positions. Record per-query deltas in findings so the archivist can learn which placements worked. |
 
 ### Schema Coverage Checks
 
@@ -93,6 +94,7 @@ When primary tools are unavailable, use these alternatives:
 - Check indexation by searching for pages in the project and verifying no `noindex` tags.
 - Check for XML sitemap completeness as a proxy for indexation intent.
 - Note: "Ranking and traffic data requires Google Search Console access. Recommend setting up GSC and re-measuring after 30 days."
+- A striking-distance pass cannot be scored without a fresh export: mark the check NOT VERIFIED (not FAIL) and name the export needed.
 
 **Ahrefs/SEMrush unavailable**:
 - Check internal link graph as the only measurable link metric.

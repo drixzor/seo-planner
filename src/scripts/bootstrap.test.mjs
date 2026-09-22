@@ -140,12 +140,13 @@ describe("new plan creation", () => {
     }
   });
 
-  it("creates findings/ and checkpoints/ directories", () => {
+  it("creates findings/, checkpoints/ and data/ directories", () => {
     run(tmpDir, "new", "Dir test");
     const planDirName = getPlanDir(tmpDir);
     const planDir = join(tmpDir, "plans", planDirName);
     assert.ok(existsSync(join(planDir, "findings")), "findings/ should exist");
     assert.ok(existsSync(join(planDir, "checkpoints")), "checkpoints/ should exist");
+    assert.ok(existsSync(join(planDir, "data")), "data/ should exist");
   });
 
   it("state.md starts in AUDIT state at iteration 0", () => {

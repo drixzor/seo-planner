@@ -160,6 +160,7 @@ plans/
     +-- progress.md                # Done vs remaining
     +-- verification.md            # SEO verification results per MEASURE cycle
     +-- checkpoints/               # Snapshots before risky changes
+    +-- data/                      # User-supplied exports (GSC Performance, Ahrefs/SEMrush CSVs). Read by auditor, executor, measurer
     +-- audit/                     # SEO-specific audit reports
     |   +-- technical.md           # Technical SEO audit (speed, mobile, schema, crawl)
     |   +-- content.md             # Content audit (topical gaps, thin content, cannibalization)
@@ -241,6 +242,7 @@ The AUDIT state is the foundation. No strategy without data. Every SEO sprint st
 - **Search Intent Alignment**: informational vs transactional vs navigational mapping, intent mismatch identification
 - **On-Page SEO**: title tag audit (length, keyword presence, uniqueness), meta description audit, heading hierarchy (H1-H6), image alt text coverage, internal linking density
 - **Content Opportunities**: "People Also Ask" gaps, featured snippet opportunities, content refresh candidates, programmatic SEO opportunities (free tools, calculators, directories)
+- **Striking-Distance Queries** (when a GSC Performance export is in `{plan-dir}/data/`): queries at position 4-15 with meaningful impressions whose wording is absent from the page's title/H1/headings; feeds the executor's striking-distance pass
 
 #### 3. Backlink Audit (`audit/backlinks.md`)
 - **Profile Overview**: total backlinks, referring domains, domain rating/authority, link velocity (links gained/lost per month)
@@ -410,6 +412,7 @@ Always implement in this order — technical foundation before content, content 
    - Implement internal linking structure (hub-and-spoke)
    - Fix title tags and meta descriptions
    - Add/fix image alt text
+   - Striking-distance query pass on top pages (executor Template E; needs a GSC export in `data/`)
    - Create content hub pages
 
 3. **Content Creation** (week 3-8)
