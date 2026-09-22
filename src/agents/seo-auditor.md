@@ -142,7 +142,7 @@ Perform every check below IN ORDER. For each check, record what you found with s
 
 Perform every check below IN ORDER.
 
-### Checklist (12 items)
+### Checklist (13 items)
 
 1. **Page Inventory**
    - List ALL content pages (HTML, MDX, MD, etc.) in the project.
@@ -202,6 +202,12 @@ Perform every check below IN ORDER.
     - Categorize all pages by type: blog post, service page, product page, landing page, informational, tool, etc.
     - Note the balance: is the site too blog-heavy? Missing service pages? No tool/calculator pages?
     - Evidence format: count per content type.
+
+13. **Striking-Distance Queries** (requires a GSC Performance export)
+    - Look for a Google Search Console Performance export (pages + queries) in `{plan-dir}/data/` (`gsc-queries.csv`, `gsc-pages.csv`, or the unpacked GSC zip).
+    - If absent: write "No GSC Performance export found. Recommend Search Console > Performance > Export (Pages + Queries, 90 days) into {plan-dir}/data/ so the executor can run a striking-distance pass." and move on. Do not estimate positions.
+    - If present: for the top 10 pages by impressions, list queries with average position 4-15 and impressions >= 50 whose wording does not appear in the page's title, H1, or any H2/H3. Note any query that appears under two or more pages (cannibalization candidate, cross-reference item 5).
+    - Evidence format: table of page, query, impressions, avg position, present-on-page (yes/no), also-ranks-on (other page or none). This table is the input to the executor's Template E.
 
 ---
 

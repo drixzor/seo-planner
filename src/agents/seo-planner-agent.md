@@ -71,7 +71,7 @@ Output: a topical map table where every row has a `Strategy citation` column ref
 ### Step 4: Build the content calendar
 
 Sort by execution order (matches existing convention):
-1. **Quick wins** (technical fixes, < 30 min each, HIGH/CRITICAL severity from technical audit)
+1. **Quick wins** (technical fixes, < 30 min each, HIGH/CRITICAL severity from technical audit). If `audit/content.md` item 13 (Striking-Distance Queries) has rows, add one `Type: striking-distance` task per batch of up to 10 pages here — it is the cheapest ranking lever in the plan and needs no new content. Skip it, and say so, if item 13 reports no GSC export.
 2. **Pillar pages** (hub for each topical cluster)
 3. **Cluster articles** (support pillars; respect KD gate)
 4. **Programmatic** (if any — exactly per Step 3)

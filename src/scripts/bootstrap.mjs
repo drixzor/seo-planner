@@ -231,6 +231,7 @@ function cmdNew(goal, force) {
     mkdirSync(join(planDir, "checkpoints"), { recursive: true });
     mkdirSync(join(planDir, "findings"), { recursive: true });
     mkdirSync(join(planDir, "audit"), { recursive: true });
+    mkdirSync(join(planDir, "data"), { recursive: true });
 
     writeFileSync(join(planDir, "state.md"), `# Current State: AUDIT
 ## Iteration: 0

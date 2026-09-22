@@ -194,6 +194,26 @@ Report what changed. Update tracking files.
    - Links are contextually appropriate (not forced).
 5. **Record all links added**: source page, anchor text, target page.
 
+### Template E: Striking-Distance Query Pass
+
+**Use for**: pushing pages that already rank on page 1-2 into the top 3 by adding the exact query wording Google is already rewarding. Cheapest ranking lever available; requires a Google Search Console export.
+
+**Input**: a GSC Performance export in `{plan-dir}/data/` (pages + queries, last 28 or 90 days). Accept `gsc-queries.csv`, `gsc-pages.csv`, or the GSC zip export unpacked. If none exists: STOP and report `BLOCKED: Template E needs a GSC Performance export (Pages + Queries) in {plan-dir}/data/. Export from Search Console > Performance > Export, then re-dispatch.` Do not guess queries from the page content.
+
+**Procedure**:
+
+1. **Rank pages by impressions** (descending). Work the top 10 pages, or the pages named in the task.
+2. **For each page, pull candidate queries** that meet ALL of:
+   - Average position between 4 and 15 (already ranking, not yet top 3). Queries at position 1-3 gain nothing; queries beyond 15 are not striking distance and belong in a content task.
+   - Impressions >= 50 over the export window (or the threshold in plan.md). Below that the position number is noise.
+   - The query wording (or an obvious inflection of it) does NOT already appear in the title, H1, any H2/H3, or the first 100 words. Check by reading the page, not by grepping the whole file.
+3. **Apply the two guards** before touching anything. Skip the query, and log why, if either fires:
+   - **Cannibalization guard**: another page on the site also receives impressions for this query in the export, or targets it in title/H1 per `audit/content.md` item 5. Adding it here splits the signal. Note it as a consolidation candidate instead.
+   - **Intent guard**: the query's intent differs from the page's (e.g. a "pricing"/"cost"/"vs" query on a how-to guide, or a "how to" query on a product page). See `references/on-page-seo.md` Search Intent Diagnosis. Bolting a mismatched query onto a page lowers the page's relevance for its main query.
+4. **Add each surviving query** in one of these places, in priority order, and stop at the first that reads naturally: an existing H2/H3 (rephrase the heading to contain the query), a new H2 with a 2-4 sentence self-contained answer, the first 100 words, the title tag (only if it stays within 60 chars and the primary keyword keeps its position). Never append a keyword list or an unrelated paragraph. Maximum 3 queries added per page per pass.
+5. **Verify** the page still has a single H1, the primary keyword is still in title/H1/first paragraph, and no heading level was skipped.
+6. **Record every change** in the task report as a table: page, query, impressions, position before, where it was added. Also record skipped queries with the guard that fired. The measurer re-reads this table to score the pass; without the before-position there is nothing to measure.
+
 ---
 
 ## Post-Task Updates (MANDATORY — do ALL after completing the task)
